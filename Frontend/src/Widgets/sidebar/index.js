@@ -1,0 +1,1 @@
+export {default as SidebarWidget } from './ui/Sidebar.widget.vue'

@@ -1,0 +1,1 @@
+export {default as NavbarWidget} from './ui/Navbar.widget.vue'

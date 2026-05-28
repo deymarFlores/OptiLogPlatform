@@ -1,0 +1,1 @@
+export { MaterialsManagement } from './ui';
