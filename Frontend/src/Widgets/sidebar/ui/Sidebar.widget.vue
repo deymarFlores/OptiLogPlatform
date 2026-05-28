@@ -133,9 +133,13 @@ const cancelDelete = () => {
 <style scoped>
 .sidebar-widget {
   width: 300px;
-  background: rgba(18, 24, 34, 0.8);
-  backdrop-filter: blur(12px);
-  border-right: 1px solid rgba(212, 163, 115, 0.2);
+  background: linear-gradient(
+    180deg,
+    rgba(10, 15, 26, 0.95) 0%,
+    rgba(20, 28, 40, 0.92) 100%
+  );
+  backdrop-filter: blur(10px);
+  border-right: 1px solid rgba(212, 163, 115, 0.15);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -145,7 +149,7 @@ const cancelDelete = () => {
 .sidebar-header {
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(212, 163, 115, 0.2);
+  border-bottom: 1px solid rgba(212, 163, 115, 0.15);
 }
 
 .sidebar-header h3 {
@@ -212,8 +216,8 @@ const cancelDelete = () => {
 }
 
 .point-item {
-  background: rgba(212, 163, 115, 0.1);
-  border: 1px solid rgba(212, 163, 115, 0.2);
+  background: rgba(212, 163, 115, 0.08);
+  border: 1px solid rgba(212, 163, 115, 0.15);
   border-radius: 0.75rem;
   padding: 0.75rem;
   display: flex;
@@ -224,8 +228,8 @@ const cancelDelete = () => {
 }
 
 .point-item:hover {
-  background: rgba(212, 163, 115, 0.15);
-  border-color: #d4a373;
+  background: rgba(212, 163, 115, 0.12);
+  border-color: rgba(212, 163, 115, 0.3);
 }
 
 .point-info {
@@ -289,12 +293,12 @@ const cancelDelete = () => {
   gap: 0.75rem;
   margin-top: auto;
   padding-top: 1.5rem;
-  border-top: 1px solid rgba(212, 163, 115, 0.2);
+  border-top: 1px solid rgba(212, 163, 115, 0.15);
 }
 
 .btn-action {
-  background: rgba(212, 163, 115, 0.15);
-  border: 1px solid rgba(212, 163, 115, 0.4);
+  background: rgba(212, 163, 115, 0.12);
+  border: 1px solid rgba(212, 163, 115, 0.3);
   color: #d4a373;
   padding: 0.7rem 1rem;
   border-radius: 0.75rem;
@@ -309,8 +313,8 @@ const cancelDelete = () => {
 }
 
 .btn-action:hover {
-  background: rgba(212, 163, 115, 0.25);
-  border-color: #d4a373;
+  background: rgba(212, 163, 115, 0.2);
+  border-color: rgba(212, 163, 115, 0.5);
   transform: translateY(-2px);
 }
 
@@ -327,13 +331,13 @@ const cancelDelete = () => {
 }
 
 .btn-materials {
-  background: rgba(212, 163, 115, 0.25);
-  border-color: rgba(212, 163, 115, 0.6);
+  background: rgba(212, 163, 115, 0.15);
+  border-color: rgba(212, 163, 115, 0.35);
 }
 
 .btn-materials:hover:not(:disabled) {
-  background: rgba(212, 163, 115, 0.4);
-  border-color: #d4a373;
+  background: rgba(212, 163, 115, 0.25);
+  border-color: rgba(212, 163, 115, 0.5);
 }
 
 .btn-materials:disabled {
@@ -342,13 +346,13 @@ const cancelDelete = () => {
 }
 
 .btn-routes {
-  background: rgba(212, 163, 115, 0.15);
-  border-color: rgba(212, 163, 115, 0.4);
+  background: rgba(212, 163, 115, 0.12);
+  border-color: rgba(212, 163, 115, 0.3);
 }
 
 .btn-routes:hover:not(:disabled) {
-  background: rgba(212, 163, 115, 0.3);
-  border-color: #d4a373;
+  background: rgba(212, 163, 115, 0.2);
+  border-color: rgba(212, 163, 115, 0.5);
 }
 
 .btn-routes:disabled {
