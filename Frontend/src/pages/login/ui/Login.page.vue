@@ -74,13 +74,16 @@
               />
             </div>
             <div class="input-group">
-              <label><i class="far fa-building"></i> Empresa / Organización</label>
-              <input 
-                v-model="registerForm.company"
-                type="text" 
-                placeholder="Logística Integral S.A." 
+              <label><i class="fas fa-user-tag"></i> Tipo de Cuenta</label>
+              <select 
+                v-model="registerForm.role"
                 required
-              />
+                class="role-select"
+              >
+                <option value="">Seleccionar tipo de cuenta...</option>
+                <option value="empresa">Empresa / Organización</option>
+                <option value="cliente">Cliente</option>
+              </select>
             </div>
             <div class="input-group">
               <label><i class="far fa-envelope"></i> Correo electrónico</label>
@@ -113,7 +116,7 @@
               <input v-model="registerForm.terms" type="checkbox" id="acceptTerms" required>
               <label for="acceptTerms">Acepto los <a href="#" style="color:#d4a373;">términos y condiciones</a> y la política de privacidad</label>
             </div>
-            <button type="submit" class="btn-auth"><i class="fas fa-user-plus"></i> Crear cuenta corporativa</button>
+            <button type="submit" class="btn-auth"><i class="fas fa-user-plus"></i> Crear cuenta</button>
           </form>
           <div class="separator">
             <hr><span>Registro corporativo</span><hr>
@@ -147,7 +150,7 @@ const loginForm = ref({
 
 const registerForm = ref({
   fullname: '',
-  company: '',
+  role: '',
   email: '',
   password: '',
   confirmPassword: '',
@@ -183,14 +186,31 @@ const handleLogin = () => {
   const { email, password } = loginForm.value;
   
   const isDemoValid = (email === DEMO_CREDENTIALS.email && password === DEMO_CREDENTIALS.password);
-  const isRegisteredValid = registeredUsers.value.some(user => user.email === email && user.password === password);
+  const registeredUser = registeredUsers.value.find(user => user.email === email && user.password === password);
   
-  if (isDemoValid || isRegisteredValid) {
-    const userName = isDemoValid ? "Ejecutivo Principal" : registeredUsers.value.find(u => u.email === email)?.fullname || "Usuario";
+  if (isDemoValid) {
+    const userName = "Ejecutivo Principal";
     showMessage(`✅ Acceso concedido. Bienvenido ${userName}. Redirigiendo al dashboard...`);
     setTimeout(() => {
-      // LOGIN: Ir directamente al dashboard (sin configuración)
+      // LOGIN Demo: Ir a dashboard de empresa
       router.push('/dashboard');
+    }, 1500);
+  } else if (registeredUser) {
+    const userName = registeredUser.fullname;
+    const role = registeredUser.role || 'empresa'; // Default a empresa
+    
+    showMessage(`✅ Acceso concedido. Bienvenido ${userName}. Redirigiendo...`);
+    setTimeout(() => {
+      sessionStorage.setItem('currentUserData', JSON.stringify({
+        fullname: userName,
+        role
+      }));
+      
+      if (role === 'empresa') {
+        router.push('/dashboard');
+      } else {
+        router.push('/client-dashboard');
+      }
     }, 1500);
   } else {
     showMessage("❌ Credenciales incorrectas. Use ejecutivo@optilog.bo / OptiLog2025 o registre una cuenta.", true);
@@ -198,9 +218,9 @@ const handleLogin = () => {
 };
 
 const handleRegister = () => {
-  const { fullname, company, email, password, confirmPassword, terms } = registerForm.value;
+  const { fullname, role, email, password, confirmPassword, terms } = registerForm.value;
   
-  if (!fullname || !company || !email) {
+  if (!fullname || !role || !email) {
     showMessage("Por favor complete todos los campos requeridos.", true);
     return;
   }
@@ -225,19 +245,31 @@ const handleRegister = () => {
     return;
   }
   
-  // Register user and redirect to setup
-  const newUser = { fullname, company, email, password };
+  // Register user and redirect based on role
+  const newUser = { fullname, role, email, password };
   registeredUsers.value.push(newUser);
-  showMessage(`🎉 Registro exitoso, ${fullname}. Iniciando configuración...`);
   
-  setTimeout(() => {
-    // REGISTRO: Redirige a /setup para configuración inicial (3 pasos)
-    sessionStorage.setItem('newUserData', JSON.stringify({
-      fullname,
-      company
-    }));
-    router.push('/setup');
-  }, 1500);
+  if (role === 'empresa') {
+    showMessage(`🎉 Registro exitoso, ${fullname}. Iniciando configuración de empresa...`);
+    setTimeout(() => {
+      // Empresa: Redirige a /setup para configuración inicial (3 pasos)
+      sessionStorage.setItem('newUserData', JSON.stringify({
+        fullname,
+        role
+      }));
+      router.push('/setup');
+    }, 1500);
+  } else {
+    showMessage(`🎉 Registro exitoso, ${fullname}. Redirigiendo a tu panel de cliente...`);
+    setTimeout(() => {
+      // Cliente: Redirige a /client-dashboard
+      sessionStorage.setItem('newUserData', JSON.stringify({
+        fullname,
+        role
+      }));
+      router.push('/client-dashboard');
+    }, 1500);
+  }
 };
 
 const showForgotMessage = () => {
@@ -418,6 +450,32 @@ const socialLogin = (provider) => {
 
 .input-group input::placeholder {
   color: #5a6678;
+}
+
+.role-select {
+  width: 100%;
+  padding: 0.9rem 1rem;
+  background: rgba(10, 15, 26, 0.7);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 1rem;
+  color: #ffffff;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+}
+
+.role-select:focus {
+  outline: none;
+  border-color: #d4a373;
+  background: rgba(10, 15, 26, 0.9);
+  box-shadow: 0 0 0 3px rgba(212, 163, 115, 0.1);
+}
+
+.role-select option {
+  background: #0a0f1a;
+  color: #ffffff;
+  padding: 0.5rem;
 }
 
 .checkbox-group {

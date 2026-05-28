@@ -93,22 +93,24 @@ const handleToggleConnectionMode = () => {
   display: flex;
   flex-direction: column;
   background: #eef2f9;
+  overflow: hidden;
 }
 
 .content-container {
   display: flex;
   width: 100%;
-  height: calc(100vh - 62px);
+  flex: 1;
+  overflow: hidden;
 }
 
 .body-container {
   flex: 1;
   overflow: hidden;
   background: #eef2f9;
-  height: calc(100vh - 62px);
   display: flex;
   flex-direction: column;
   position: relative;
+  width: 100%;
 }
 
 .dashboard-content {
@@ -184,6 +186,13 @@ const handleToggleConnectionMode = () => {
     transform: translateX(0);
     opacity: 1;
   }
+}
+
+/* Asegurar que los componentes dentro de body-container ocupen todo el espacio */
+.body-container > * {
+  width: 100%;
+  height: 100%;
+  flex: 1;
 }
 
 @media (max-width: 768px) {
