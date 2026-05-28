@@ -7,7 +7,8 @@ const setupState = reactive({
     city: '',
     phone: ''
   },
-  pointTypes: []
+  pointTypes: [],
+  products: []
 });
 
 export function useSetupStore() {
@@ -24,9 +25,14 @@ export function useSetupStore() {
     setupState.pointTypes = types;
   };
 
+  const setProducts = (products) => {
+    setupState.products = products;
+  };
+
   const getSetupData = () => ({
     company: setupState.company,
-    pointTypes: setupState.pointTypes
+    pointTypes: setupState.pointTypes,
+    products: setupState.products
   });
 
   const resetSetup = () => {
@@ -37,13 +43,16 @@ export function useSetupStore() {
       phone: ''
     };
     setupState.pointTypes = [];
+    setupState.products = [];
   };
 
   return {
     company: setupState.company,
     pointTypes: setupState.pointTypes,
+    products: setupState.products,
     setCompany,
     setPointTypes,
+    setProducts,
     getSetupData,
     resetSetup
   };

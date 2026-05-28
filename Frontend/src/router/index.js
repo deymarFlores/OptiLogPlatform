@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 
 import { LandingPage } from "@/pages/landingPage";
+import { LoginPage } from "@/pages/login";
 import { SetupPage } from "@/pages/setup";
 import { DashboardLayout } from "@/pages/dashboard";
 
@@ -11,6 +12,14 @@ const routes = [
   {
     path: "/",
     component: LandingPage,
+  },
+
+  // ============================================
+  //                   AUTH
+  // ============================================
+  {
+    path: "/login",
+    component: LoginPage,
   },
 
   // ============================================

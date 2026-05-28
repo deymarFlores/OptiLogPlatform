@@ -7,7 +7,7 @@
       <div class="setup-header">
         <i class="fas fa-cog"></i>
         <h1>Configuración Inicial</h1>
-        <p>Registra tu empresa y tipos de puntos de acopio</p>
+        <p>Registra tu empresa, puntos de distribución y productos</p>
       </div>
 
       <div class="setup-content">
@@ -16,7 +16,11 @@
         </div>
 
         <div v-show="currentStep === 2" class="step-content">
-          <PointTypesForm @back="goToStep1" @complete="handleSetupComplete" />
+          <PointTypesForm @back="goToStep1" @next="goToStep3" />
+        </div>
+
+        <div v-show="currentStep === 3" class="step-content">
+          <ProductsForm @back="goToStep2" @complete="handleSetupComplete" />
         </div>
       </div>
 
@@ -28,7 +32,12 @@
         <div class="line"></div>
         <div :class="['step', { active: currentStep === 2 }]">
           <span>2</span>
-          <p>Tipos de Puntos</p>
+          <p>Distribución</p>
+        </div>
+        <div class="line"></div>
+        <div :class="['step', { active: currentStep === 3 }]">
+          <span>3</span>
+          <p>Productos</p>
         </div>
       </div>
     </div>
@@ -40,6 +49,7 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import CompanyForm from './components/CompanyForm.vue';
 import PointTypesForm from './components/PointTypesForm.vue';
+import ProductsForm from './components/ProductsForm.vue';
 
 const router = useRouter();
 const currentStep = ref(1);
@@ -50,6 +60,10 @@ const goToStep2 = () => {
 
 const goToStep1 = () => {
   currentStep.value = 1;
+};
+
+const goToStep3 = () => {
+  currentStep.value = 3;
 };
 
 const handleSetupComplete = () => {
@@ -99,14 +113,14 @@ const handleSetupComplete = () => {
 .setup-container {
   max-width: 600px;
   width: 100%;
-  background: rgba(18, 24, 34, 0.8);
-  backdrop-filter: blur(12px);
-  border-radius: 2rem;
-  padding: 3rem;
+  background: rgba(15, 21, 30, 0.85);
+  backdrop-filter: blur(16px);
   border: 1px solid rgba(212, 163, 115, 0.2);
-  box-shadow: 0 25px 40px -12px rgba(0, 0, 0, 0.5);
+  border-radius: 2rem;
+  padding: 2.5rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   position: relative;
-  z-index: 10;
+  z-index: 1;
 }
 
 .setup-header {
@@ -115,15 +129,14 @@ const handleSetupComplete = () => {
 }
 
 .setup-header i {
-  font-size: 3rem;
+  font-size: 2.5rem;
   color: #d4a373;
   margin-bottom: 1rem;
-  display: block;
 }
 
 .setup-header h1 {
-  font-size: 2rem;
-  font-weight: 800;
+  font-size: 1.8rem;
+  font-weight: 700;
   margin-bottom: 0.5rem;
   background: linear-gradient(135deg, #ffffff, #d4a373);
   -webkit-background-clip: text;
@@ -132,20 +145,20 @@ const handleSetupComplete = () => {
 }
 
 .setup-header p {
-  color: #a0abb9;
-  font-size: 0.95rem;
+  color: #9aa5b5;
+  font-size: 0.9rem;
 }
 
 .setup-content {
-  min-height: 300px;
+  min-height: 400px;
   margin-bottom: 2rem;
 }
 
 .step-content {
-  animation: fadeIn 0.3s ease-in-out;
+  animation: slideIn 0.4s ease-out;
 }
 
-@keyframes fadeIn {
+@keyframes slideIn {
   from {
     opacity: 0;
     transform: translateY(10px);
@@ -160,9 +173,10 @@ const handleSetupComplete = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 2rem;
+  gap: 0;
+  margin-top: 2rem;
   padding-top: 2rem;
-  border-top: 1px solid rgba(212, 163, 115, 0.2);
+  border-top: 1px solid rgba(212, 163, 115, 0.1);
 }
 
 .step {
@@ -170,53 +184,74 @@ const handleSetupComplete = () => {
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
-  opacity: 0.5;
-  transition: all 0.3s ease;
-}
-
-.step.active {
-  opacity: 1;
 }
 
 .step span {
-  width: 40px;
-  height: 40px;
-  background: rgba(212, 163, 115, 0.1);
-  border: 2px solid rgba(212, 163, 115, 0.3);
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(212, 163, 115, 0.1);
+  color: #9aa5b5;
   font-weight: 700;
-  color: #d4a373;
+  transition: all 0.3s ease;
 }
 
 .step.active span {
   background: #d4a373;
   color: #0a0f1a;
-  border-color: #d4a373;
+  transform: scale(1.1);
 }
 
 .step p {
   font-size: 0.75rem;
+  color: #9aa5b5;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: #8e9aab;
+  margin-top: 0.5rem;
+}
+
+.step.active p {
+  color: #d4a373;
+  font-weight: 600;
 }
 
 .line {
-  width: 30px;
+  flex: 1;
   height: 2px;
-  background: rgba(212, 163, 115, 0.2);
+  background: rgba(212, 163, 115, 0.1);
+  margin: 0 1rem;
+  max-width: 60px;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 600px) {
   .setup-container {
-    padding: 2rem;
+    padding: 1.8rem;
   }
 
   .setup-header h1 {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
+  }
+
+  .progress-indicator {
+    gap: 0.5rem;
+  }
+
+  .line {
+    margin: 0 0.5rem;
+    max-width: 30px;
+  }
+
+  .step span {
+    width: 35px;
+    height: 35px;
+    font-size: 0.85rem;
+  }
+
+  .step p {
+    font-size: 0.65rem;
   }
 }
 </style>

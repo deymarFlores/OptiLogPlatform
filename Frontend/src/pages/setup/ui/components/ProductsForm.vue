@@ -1,58 +1,66 @@
 <template>
   <div class="form-container">
-    <h2>Puntos de Distribución</h2>
-    <p class="form-subtitle">Define los tipos de puntos de distribución que tu empresa maneja</p>
+    <h2>Productos de tu Empresa</h2>
+    <p class="form-subtitle">Define los productos que tu empresa ofrece</p>
 
-    <div class="points-list">
+    <div class="products-list">
       <div
-        v-for="pointType in form.pointTypes"
-        :key="pointType.id"
-        class="point-item"
+        v-for="product in form.products"
+        :key="product.id"
+        class="product-item"
       >
-        <div class="point-header">
+        <div class="product-header">
           <input
-            v-model="pointType.name"
+            v-model="product.name"
             type="text"
-            class="point-name"
-            placeholder="Ej: Almacén, Tienda, Centro de Distribución"
+            class="product-name"
+            placeholder="Ej: Producto A, Servicio B"
           />
-          <button type="button" class="btn-remove" @click="removePointType(pointType.id)">
+          <button type="button" class="btn-remove" @click="removeProduct(product.id)">
             <i class="fas fa-trash"></i>
           </button>
         </div>
-        <div class="point-details">
+        <div class="product-details">
           <div class="detail-group">
-            <label>Icono</label>
-            <select v-model="pointType.icon" class="icon-select">
-              <option value="fa-warehouse">📦 Almacén</option>
-              <option value="fa-store">🏪 Tienda</option>
-              <option value="fa-truck">🚚 Centro de Distribución</option>
-              <option value="fa-boxes">📫 Punto de Recepción</option>
-              <option value="fa-location-dot">📍 Sucursal</option>
+            <label>Unidad de Medida</label>
+            <select v-model="product.unit" class="unit-select">
+              <option value="">Seleccionar...</option>
+              <option value="unidad">Unidad</option>
+              <option value="kg">Kilogramo (kg)</option>
+              <option value="g">Gramo (g)</option>
+              <option value="L">Litro (L)</option>
+              <option value="mL">Mililitro (mL)</option>
+              <option value="m">Metro (m)</option>
+              <option value="cm">Centímetro (cm)</option>
+              <option value="h">Hora (h)</option>
+              <option value="otro">Otro</option>
             </select>
           </div>
           <div class="detail-group">
-            <label>Color</label>
+            <label>Precio por {{ product.unit || 'unidad' }} (Bs.)</label>
             <input
-              v-model="pointType.color"
-              type="color"
-              class="color-input"
+              v-model.number="product.price"
+              type="number"
+              class="price-input"
+              placeholder="0.00"
+              step="0.01"
+              min="0"
             />
           </div>
         </div>
       </div>
     </div>
 
-    <button type="button" class="btn-add" @click="addPointType">
-      <i class="fas fa-plus"></i> Agregar Punto de Distribución
+    <button type="button" class="btn-add" @click="addProduct">
+      <i class="fas fa-plus"></i> Agregar Producto
     </button>
 
     <div class="form-actions">
       <button type="button" class="btn-back" @click="$emit('back')">
         <i class="fas fa-arrow-left"></i> Atrás
       </button>
-      <button type="button" class="btn-complete" @click="handleNext">
-        <i class="fas fa-arrow-right"></i> Siguiente
+      <button type="button" class="btn-complete" @click="handleComplete">
+        <i class="fas fa-check"></i> Completar Configuración
       </button>
     </div>
   </div>
@@ -62,46 +70,46 @@
 import { ref } from 'vue';
 import { useSetupStore } from '@/pages/setup/composables/useSetupStore';
 
-const emit = defineEmits(['back', 'next']);
+const emit = defineEmits(['back', 'complete']);
 const setupStore = useSetupStore();
 
 const form = ref({
-  pointTypes: setupStore.pointTypes.length
-    ? setupStore.pointTypes
-    : [
-        { id: 1, name: 'Almacén', icon: 'fa-warehouse', color: '#1e4a6e' },
-        { id: 2, name: 'Tienda', icon: 'fa-store', color: '#e67e22' }
-      ]
+  products: setupStore.products.length
+    ? setupStore.products
+    : []
 });
 
-let nextId = 3;
+let nextId = 1;
 
-const addPointType = () => {
-  form.value.pointTypes.push({
+const addProduct = () => {
+  form.value.products.push({
     id: nextId++,
     name: '',
-    icon: 'fa-warehouse',
-    color: '#' + Math.floor(Math.random() * 16777215).toString(16)
+    unit: '',
+    price: 0
   });
 };
 
-const removePointType = (id) => {
-  form.value.pointTypes = form.value.pointTypes.filter(pt => pt.id !== id);
+const removeProduct = (id) => {
+  form.value.products = form.value.products.filter(p => p.id !== id);
 };
 
-const handleNext = () => {
-  const validTypes = form.value.pointTypes.filter(pt => pt.name.trim());
+const handleComplete = () => {
+  const validProducts = form.value.products.filter(
+    p => p.name.trim() && p.unit && p.price > 0
+  );
 
-  if (validTypes.length === 0) {
-    console.error('❌ Debes agregar al menos un tipo de punto');
+  if (validProducts.length === 0) {
+    console.error('❌ Debes agregar al menos un producto con nombre, unidad y precio');
     return;
   }
 
-  setupStore.setPointTypes(validTypes);
+  setupStore.setProducts(validProducts);
 
-  console.log('✅ Tipos de puntos de distribución registrados:', validTypes);
+  console.log('✅ Productos registrados:', validProducts);
+  console.log('📋 Configuración completa:', setupStore.getSetupData());
 
-  emit('next');
+  emit('complete');
 };
 </script>
 
@@ -134,7 +142,7 @@ h2 {
   margin-bottom: 1.5rem;
 }
 
-.points-list {
+.products-list {
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -143,20 +151,20 @@ h2 {
   overflow-y: auto;
 }
 
-.point-item {
+.product-item {
   background: rgba(10, 15, 26, 0.4);
   border: 1px solid rgba(212, 163, 115, 0.2);
   border-radius: 1rem;
   padding: 1rem;
 }
 
-.point-header {
+.product-header {
   display: flex;
   gap: 0.5rem;
   margin-bottom: 0.75rem;
 }
 
-.point-name {
+.product-name {
   flex: 1;
   background: rgba(10, 15, 26, 0.6);
   border: 1px solid rgba(212, 163, 115, 0.3);
@@ -167,7 +175,7 @@ h2 {
   font-weight: 600;
 }
 
-.point-name:focus {
+.product-name:focus {
   outline: none;
   border-color: #d4a373;
 }
@@ -187,7 +195,7 @@ h2 {
   background: rgba(224, 61, 61, 0.3);
 }
 
-.point-details {
+.product-details {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.75rem;
@@ -207,8 +215,21 @@ h2 {
   letter-spacing: 0.5px;
 }
 
-.icon-select,
-.color-input {
+.price-input {
+  padding: 0.5rem;
+  background: rgba(10, 15, 26, 0.6);
+  border: 1px solid rgba(212, 163, 115, 0.3);
+  border-radius: 0.4rem;
+  color: #e8edf2;
+  font-size: 0.8rem;
+}
+
+.price-input:focus {
+  outline: none;
+  border-color: #d4a373;
+}
+
+.unit-select {
   padding: 0.5rem;
   background: rgba(10, 15, 26, 0.6);
   border: 1px solid rgba(212, 163, 115, 0.3);
@@ -218,10 +239,14 @@ h2 {
   cursor: pointer;
 }
 
-.icon-select:focus,
-.color-input:focus {
+.unit-select:focus {
   outline: none;
   border-color: #d4a373;
+}
+
+.unit-select option {
+  background: #0a0f1a;
+  color: #e8edf2;
 }
 
 .btn-add {
@@ -287,11 +312,11 @@ h2 {
     font-size: 1.25rem;
   }
 
-  .points-list {
+  .products-list {
     max-height: 250px;
   }
 
-  .point-details {
+  .product-details {
     grid-template-columns: 1fr;
   }
 
