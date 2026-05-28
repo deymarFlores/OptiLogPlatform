@@ -1,0 +1,1 @@
+export { MaterialsConfiguration } from './ui';
