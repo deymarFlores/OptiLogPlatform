@@ -1,6 +1,6 @@
 from fastapi import APIRouter
-from src.modules.copanies.schemas.CompanySchema import CompanieSchema
-from src.modules.copanies.service.CompanyService import CompanyService
+from src.modules.companies.schemas.CompanySchema import CompanieSchema
+from src.modules.companies.service.CompanyService import CompanyService
 
 router = APIRouter(prefix="/api/companies", tags=["companies"])
 service = CompanyService()

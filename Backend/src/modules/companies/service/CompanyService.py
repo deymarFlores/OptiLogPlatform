@@ -1,5 +1,5 @@
 from src.core.database import db
-from src.modules.copanies.schemas.CompanySchema import CompanieSchema
+from src.modules.companies.schemas.CompanySchema import CompanieSchema
 from fastapi import HTTPException
 from bson.objectid import ObjectId
 
