@@ -1,21 +1,24 @@
 <template>
   <div class="map-container">
     <div ref="mapContainer" class="map-view"></div>
-    <!-- Canvas para línea dinámica del mouse -->
-    <canvas 
-      v-if="isConnecting" 
-      ref="dynamicLineCanvas" 
+    <canvas
+      v-if="isConnecting"
+      ref="dynamicLineCanvas"
       class="dynamic-line-canvas"
     ></canvas>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, watch } from 'vue';
-import L from 'leaflet';
+import { ref, onMounted, nextTick, watch } from "vue";
+import L from "leaflet";
 
 const props = defineProps({
-  isConnectionModeActive: Boolean
+  isConnectionModeActive: Boolean,
+  locationTypes: {
+    type: Array,
+    default: () => [],
+  },
 });
 
 const mapContainer = ref(null);
@@ -23,17 +26,15 @@ const dynamicLineCanvas = ref(null);
 let map = null;
 let markersLayer = null;
 let routesLayer = null;
-let pointsMarkersMap = new Map(); // Map para rastrear marcadores por ID de punto
+let pointsMarkersMap = new Map();
 
-const emit = defineEmits(['map-click', 'route-created', 'route-started']);
+const emit = defineEmits(["map-click", "route-created", "route-started"]);
 
-// Estado para modo de conexión
 const isConnecting = ref(false);
 const selectedPointId = ref(null);
 const selectedPointCoords = ref(null);
 let mousePos = { x: 0, y: 0 };
 
-// Watch para actualizar canvas cuando isConnecting cambia
 watch(isConnecting, (newVal) => {
   if (newVal) {
     nextTick(() => {
@@ -60,30 +61,34 @@ const initializeMap = () => {
   map = L.map(mapContainer.value, {
     preferCanvas: true,
     attributionControl: true,
-    zoomControl: true
+    zoomControl: true,
   }).setView([-16.5, -68.15], 13);
 
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    maxZoom: 19,
-    maxNativeZoom: 18,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/">CARTO</a>',
-    className: 'map-tiles',
-    crossOrigin: true,
-    errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
-  }).addTo(map);
+  L.tileLayer(
+    "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+    {
+      maxZoom: 19,
+      maxNativeZoom: 18,
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/">CARTO</a>',
+      className: "map-tiles",
+      crossOrigin: true,
+      errorTileUrl:
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
+    },
+  ).addTo(map);
 
   markersLayer = L.layerGroup().addTo(map);
   routesLayer = L.layerGroup().addTo(map);
 
-  map.on('click', (e) => {
+  map.on("click", (e) => {
     if (!isConnecting.value) {
-      emit('map-click', e.latlng);
+      emit("map-click", e.latlng);
     }
   });
 
-  // Rastrear movimiento del mouse para línea dinámica
   const mapElement = map.getContainer();
-  mapElement.addEventListener('mousemove', (e) => {
+  mapElement.addEventListener("mousemove", (e) => {
     if (isConnecting.value) {
       const rect = mapElement.getBoundingClientRect();
       mousePos.x = e.clientX - rect.left;
@@ -92,21 +97,14 @@ const initializeMap = () => {
     }
   });
 
-  // NO cancelar por mouseleave cuando estamos conectando
-  // (el usuario podría mover el mouse fuera del mapa sin querer cancelar)
-  mapElement.addEventListener('mouseleave', () => {
-    // Solo cancelar si el usuario sale completamente del mapa y no está conectando
-    // Esto permite que el usuario pueda mover el mouse fuera para acceder a paneles sin perder la conexión
-  });
+  mapElement.addEventListener("mouseleave", () => {});
 
-  // Actualizar tamaño del canvas cuando cambia el tamaño del mapa
-  window.addEventListener('resize', updateCanvasSize);
+  window.addEventListener("resize", updateCanvasSize);
 
   map.invalidateSize();
-  map.getContainer().style.borderRadius = '12px';
-  map.getContainer().style.overflow = 'hidden';
-  
-  // Inicializar tamaño del canvas
+  map.getContainer().style.borderRadius = "12px";
+  map.getContainer().style.overflow = "hidden";
+
   updateCanvasSize();
 };
 
@@ -126,37 +124,34 @@ const addMarker = (point) => {
     </div>
   `;
 
-  const iconElement = document.createElement('div');
-  iconElement.className = 'custom-marker';
+  const iconElement = document.createElement("div");
+  iconElement.className = "custom-marker";
   iconElement.style.backgroundColor = point.color;
   iconElement.innerHTML = `<i class="fas ${point.icon}"></i>`;
 
   const customIcon = L.divIcon({
     html: iconElement.outerHTML,
-    className: 'custom-div-icon',
+    className: "custom-div-icon",
     iconSize: [40, 40],
     iconAnchor: [20, 40],
-    popupAnchor: [0, -30]
+    popupAnchor: [0, -30],
   });
 
   const marker = L.marker([point.lat, point.lng], { icon: customIcon })
     .bindPopup(popupContent)
     .addTo(markersLayer);
 
-  // Agregar evento click al marcador para iniciar conexión
-  marker.on('click', (e) => {
+  marker.on("click", (e) => {
     e.originalEvent.stopPropagation();
-    
+
     if (isConnecting.value && selectedPointId.value !== point.id) {
-      // Completar la conexión
-      console.log('Conexión completada:', selectedPointId.value, '→', point.id);
-      emit('route-created', {
+      console.log("Conexión completada:", selectedPointId.value, "→", point.id);
+      emit("route-created", {
         fromPointId: selectedPointId.value,
-        toPointId: point.id
+        toPointId: point.id,
       });
       cancelConnectionMode();
     } else if (!isConnecting.value && props.isConnectionModeActive) {
-      // Iniciar modo de conexión solo si el modo está activo globalmente
       startConnectionMode(point.id, point);
     }
   });
@@ -164,16 +159,156 @@ const addMarker = (point) => {
   pointsMarkersMap.set(point.id, marker);
 };
 
-const drawRoute = (fromPoint, toPoint, color = '#1e4a6e', weight = 2) => {
+const addSucursalMarker = (sucursal) => {
+  console.log("📍 addSucursalMarker llamado con:", sucursal);
+  console.log("📍 type_location_id buscando:", sucursal.type_location_id);
+  console.log("📍 locationTypes disponibles:", props.locationTypes);
+
+  if (props.locationTypes && props.locationTypes.length > 0) {
+    console.log(
+      "📍 IDs disponibles en locationTypes:",
+      props.locationTypes.map((t) => t.id),
+    );
+  }
+
+  const locationType = props.locationTypes.find(
+    (t) => t.id === sucursal.type_location_id,
+  );
+
+  console.log("📍 locationType encontrado:", locationType);
+
+  if (!locationType) {
+    console.warn("Tipo de ubicación no encontrado:", sucursal.type_location_id);
+    console.warn(
+      "IDs disponibles:",
+      props.locationTypes.map((t) => t.id),
+    );
+    return;
+  }
+
+  const customIcon = L.divIcon({
+    html: `
+      <div style="position: relative; display: flex; flex-direction: column; align-items: center;">
+        <!-- Etiqueta flotante sobre el icono -->
+        <div style="
+          background: #1e293b;
+          color: #94a3b8;
+          font-size: 8px;
+          font-weight: 600;
+          padding: 3px 8px;
+          border-radius: 12px;
+          letter-spacing: 0.5px;
+          white-space: nowrap;
+          margin-bottom: 4px;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+          border: 1px solid #334155;
+        ">
+          <i class="fas fa-building" style="font-size: 7px; margin-right: 3px;"></i>
+          SUCURSAL
+        </div>
+        <!-- Icono principal -->
+        <div style="
+          background: ${locationType.color || "#475569"};
+          width: 38px;
+          height: 38px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-size: 16px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+          border: 2px solid white;
+          transition: transform 0.2s ease;
+        ">
+          <i class="fas ${locationType.icon || "fa-warehouse"}"></i>
+        </div>
+      </div>
+    `,
+    className: "sucursal-div-icon",
+    iconSize: [38, 58],
+    iconAnchor: [19, 50],
+    popupAnchor: [0, -50],
+  });
+
+  const popupContent = `
+    <div style="font-family: 'Segoe UI', sans-serif; min-width: 180px;">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid #e0e0e0;">
+        <i class="fas ${locationType.icon || "fa-warehouse"}" style="color: ${locationType.color || "#475569"}; font-size: 18px;"></i>
+        <strong style="color: #333; font-size: 14px;">${sucursal.name}</strong>
+      </div>
+      <div style="margin-bottom: 4px;">
+        <span style="color: #666; font-size: 11px;">📋 Tipo:</span>
+        <span style="color: #333; font-size: 11px; font-weight: 500;"> ${locationType.name}</span>
+      </div>
+      <div>
+        <span style="color: #666; font-size: 11px;">📍 Ubicación:</span>
+        <span style="color: #999; font-size: 10px;"> ${sucursal.lat.toFixed(4)}, ${sucursal.lng.toFixed(4)}</span>
+      </div>
+    </div>
+  `;
+
+  const marker = L.marker([sucursal.lat, sucursal.lng], { icon: customIcon })
+    .bindPopup(popupContent, {
+      maxWidth: 260,
+      minWidth: 200,
+      className: "sucursal-popup",
+    })
+    .addTo(markersLayer);
+
+  marker.on("mouseover", function () {
+    const iconDiv = this._icon?.querySelector("div:last-child");
+    if (iconDiv) {
+      iconDiv.style.transform = "scale(1.1)";
+      iconDiv.style.transition = "transform 0.2s ease";
+    }
+  });
+
+  marker.on("mouseout", function () {
+    const iconDiv = this._icon?.querySelector("div:last-child");
+    if (iconDiv) {
+      iconDiv.style.transform = "scale(1)";
+    }
+  });
+
+  marker.on("click", (e) => {
+    e.originalEvent.stopPropagation();
+
+    if (isConnecting.value && selectedPointId.value !== sucursal.id) {
+      emit("route-created", {
+        fromPointId: selectedPointId.value,
+        toPointId: sucursal.id,
+      });
+      cancelConnectionMode();
+    } else if (!isConnecting.value && props.isConnectionModeActive) {
+      startConnectionMode(sucursal.id, {
+        id: sucursal.id,
+        name: sucursal.name,
+        lat: sucursal.lat,
+        lng: sucursal.lng,
+        typeName: locationType.name,
+        icon: locationType.icon,
+        color: locationType.color,
+      });
+    }
+  });
+
+  pointsMarkersMap.set(sucursal.id, marker);
+};
+
+const drawRoute = (fromPoint, toPoint, color = "#1e4a6e", weight = 2) => {
   const polyline = L.polyline(
-    [[fromPoint.lat, fromPoint.lng], [toPoint.lat, toPoint.lng]],
+    [
+      [fromPoint.lat, fromPoint.lng],
+      [toPoint.lat, toPoint.lng],
+    ],
     {
       color: color,
       weight: weight,
       opacity: 0.7,
-      dashArray: '5, 5',
-      className: 'route-line'
-    }
+      dashArray: "5, 5",
+      className: "route-line",
+    },
   ).addTo(routesLayer);
 
   return polyline;
@@ -185,13 +320,11 @@ const drawDynamicLine = () => {
   }
 
   const canvas = dynamicLineCanvas.value;
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext("2d");
 
-  // Limpiar canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Dibujar línea desde punto inicial al mouse
-  ctx.strokeStyle = '#d4a373';
+  ctx.strokeStyle = "#d4a373";
   ctx.lineWidth = 2;
   ctx.setLineDash([5, 5]);
   ctx.globalAlpha = 0.6;
@@ -206,32 +339,36 @@ const drawDynamicLine = () => {
 };
 
 const startConnectionMode = (pointId, point) => {
-  console.log('Conexión iniciada desde:', point.name);
+  console.log("Conexión iniciada desde:", point.name);
   isConnecting.value = true;
   selectedPointId.value = pointId;
 
-  // Obtener coordenadas en pixel del punto en el canvas
   const marker = pointsMarkersMap.get(pointId);
   if (marker) {
     const latLng = marker.getLatLng();
     const point_px = map.latLngToContainerPoint(latLng);
     selectedPointCoords.value = {
       x: point_px.x,
-      y: point_px.y
+      y: point_px.y,
     };
   }
 
-  emit('route-started', { pointId, point });
+  emit("route-started", { pointId, point });
 };
 
 const cancelConnectionMode = () => {
-  console.log('Cancelando modo conexión');
+  console.log("Cancelando modo conexión");
   isConnecting.value = false;
   selectedPointId.value = null;
   selectedPointCoords.value = null;
   if (dynamicLineCanvas.value) {
-    const ctx = dynamicLineCanvas.value.getContext('2d');
-    ctx.clearRect(0, 0, dynamicLineCanvas.value.width, dynamicLineCanvas.value.height);
+    const ctx = dynamicLineCanvas.value.getContext("2d");
+    ctx.clearRect(
+      0,
+      0,
+      dynamicLineCanvas.value.width,
+      dynamicLineCanvas.value.height,
+    );
   }
 };
 
@@ -252,13 +389,14 @@ const getMapInstance = () => map;
 
 defineExpose({
   addMarker,
+  addSucursalMarker,
   clearMarkers,
   drawRoute,
   clearRoutes,
   startConnectionMode,
   cancelConnectionMode,
   isConnecting,
-  getMapInstance
+  getMapInstance,
 });
 </script>
 
@@ -334,7 +472,7 @@ defineExpose({
 
 .leaflet-container {
   background: #eef2f9;
-  font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  font-family: "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
 }
 
 .leaflet-control-attribution {
