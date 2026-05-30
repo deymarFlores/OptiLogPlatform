@@ -1,4 +1,5 @@
 import { ref, reactive, computed } from 'vue';
+import { useSetupStore } from '@/pages/setup/composables/useSetupStore';
 
 const pointsState = reactive({
   points: [],
@@ -6,14 +7,33 @@ const pointsState = reactive({
 });
 
 export const useMapPoints = () => {
+  const setupStore = useSetupStore();
+  const setupData = setupStore.getSetupData();
+  
   const allPoints = computed(() => pointsState.points);
   
   const pointsByType = computed(() => {
-    return {
-      almacenes: pointsState.points.filter(p => p.typeId === 1),
-      tiendas: pointsState.points.filter(p => p.typeId === 2)
-    };
+    const grouped = {};
+    
+    // Crear un grupo para cada tipo disponible
+    if (setupData.pointTypes.length > 0) {
+      setupData.pointTypes.forEach(type => {
+        grouped[type.name] = pointsState.points.filter(p => 
+          p.typeId === type.id || p.typeName === type.name
+        );
+      });
+    } else {
+      // Fallback si no hay tipos (solo para compatibilidad)
+      grouped['Almacenes'] = pointsState.points.filter(p => p.typeId === 1);
+      grouped['Tiendas'] = pointsState.points.filter(p => p.typeId === 2);
+    }
+    
+    return grouped;
   });
+  
+  const getPointTypeNames = () => {
+    return setupData.pointTypes.map(t => t.name);
+  };
 
   const addPoint = (data) => {
     const newPoint = {
@@ -32,7 +52,7 @@ export const useMapPoints = () => {
   };
 
   const removePoint = (id) => {
-    const index = pointsState.points.findIndex(p => p.id === id);
+    const index = pointsState.findIndex(p => p.id === id);
     if (index !== -1) {
       pointsState.points.splice(index, 1);
     }
@@ -50,6 +70,7 @@ export const useMapPoints = () => {
   return {
     allPoints,
     pointsByType,
+    getPointTypeNames,
     addPoint,
     removePoint,
     getPoint,
