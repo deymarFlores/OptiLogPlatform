@@ -7,9 +7,26 @@ from bson.objectid import ObjectId
 class CompanyService:
     def __init__(self):
         self.collection = db["companies"]
+        self._create_indexes()
+
+    def _create_indexes(self):
+        try:
+            self.collection.create_index([("name", 1)], unique=True)
+        except Exception:
+            pass
 
     def create(self, user_id: str, data: CompanieSchema):
         try:
+            existing_company = self.collection.find_one({
+                "name": data.name
+            })
+            
+            if existing_company:
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Ya existe una empresa con el nombre '{data.name}'"
+                )
+            
             company = {
                 "user_id": ObjectId(user_id),
                 "name": data.name,
@@ -24,6 +41,8 @@ class CompanyService:
                 "address": data.address,
                 "phone": data.phone
             }
+        except HTTPException:
+            raise
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error al crear empresa: {str(e)}")
 
@@ -59,6 +78,22 @@ class CompanyService:
 
     def update(self, company_id: str, data: CompanieSchema):
         try:
+            company = self.collection.find_one({"_id": ObjectId(company_id)})
+            if not company:
+                raise HTTPException(status_code=404, detail="Empresa no encontrada")
+            
+            if company["name"] != data.name:
+                existing_company = self.collection.find_one({
+                    "name": data.name,
+                    "_id": {"$ne": ObjectId(company_id)}
+                })
+                
+                if existing_company:
+                    raise HTTPException(
+                        status_code=400, 
+                        detail=f"Ya existe una empresa con el nombre '{data.name}'"
+                    )
+            
             result = self.collection.update_one(
                 {"_id": ObjectId(company_id)},
                 {"$set": {
@@ -67,9 +102,9 @@ class CompanyService:
                     "phone": data.phone
                 }}
             )
-            if result.matched_count == 0:
-                raise HTTPException(status_code=404, detail="Empresa no encontrada")
             return {"message": "Empresa actualizada"}
+        except HTTPException:
+            raise
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error al actualizar empresa: {str(e)}")
 
