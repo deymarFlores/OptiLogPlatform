@@ -47,41 +47,67 @@
       </div>
 
       <button type="submit" class="btn-next">
-        <i class="fas fa-arrow-right"></i> Siguiente
+        <i class="fas fa-arrow-right"></i>
+        Siguiente
       </button>
     </form>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useSetupStore } from '@/pages/setup/composables/useSetupStore';
+import { ref, onMounted } from "vue";
+import { useSetupStore } from "@/pages/setup/composables/useSetupStore";
 
-const emit = defineEmits(['next']);
+const emit = defineEmits(["next"]);
 const setupStore = useSetupStore();
 
 const form = ref({
-  companyName: setupStore.company.name || '',
-  description: setupStore.company.description || '',
-  city: setupStore.company.city || '',
-  phone: setupStore.company.phone || ''
+  companyName: setupStore.company.name || "",
+  description: setupStore.company.description || "",
+  city: setupStore.company.city || "",
+  phone: setupStore.company.phone || "",
 });
 
 const handleSubmit = () => {
+  if (!form.value.companyName || !form.value.city) {
+    alert("Por favor completa los campos requeridos");
+    return;
+  }
+
+  const newUserData = JSON.parse(sessionStorage.getItem("newUserData") || "{}");
+  const userId = newUserData.userId || setupStore.userId;
+
+  if (!userId) {
+    console.error("❌ No hay userId disponible");
+    alert("Error: No se encontró el usuario. Por favor regístrate de nuevo.");
+    return;
+  }
+
+  setupStore.resetSetupData();
+
+  setupStore.setUserId(userId);
+
   setupStore.setCompany({
+    id: `temp-${Date.now()}`,
     name: form.value.companyName,
     description: form.value.description,
     city: form.value.city,
-    phone: form.value.phone
+    phone: form.value.phone,
   });
 
-  console.log('📝 Empresa registrada:', {
-    name: form.value.companyName,
-    city: form.value.city
-  });
-
-  emit('next');
+  console.log(
+    "📝 Empresa guardada en memoria (paso 1):",
+    setupStore.company.value,
+  );
+  emit("next");
 };
+
+onMounted(() => {
+  const newUserData = JSON.parse(sessionStorage.getItem("newUserData") || "{}");
+  if (newUserData.userId) {
+    setupStore.setUserId(newUserData.userId);
+  }
+});
 </script>
 
 <style scoped>
