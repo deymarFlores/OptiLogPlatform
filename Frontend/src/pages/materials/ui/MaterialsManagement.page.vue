@@ -101,36 +101,32 @@
             <h4>Agregar Producto</h4>
             <div class="form-grid">
               <div class="form-group">
-                <label for="productName">Nombre del Producto</label>
-                <input 
-                  v-model="formData.type"
-                  id="productName"
-                  type="text"
-                  placeholder="Ej: Pasta de Trigo"
+                <label for="productSelect">Producto</label>
+                <select 
+                  v-model="formData.productId"
+                  id="productSelect"
                   required
-                />
+                  class="product-select"
+                >
+                  <option value="">Seleccionar producto...</option>
+                  <option v-for="product in products" :key="product.id" :value="product.id">
+                    {{ product.name }} ({{ product.price }} Bs/{{ product.unit }})
+                  </option>
+                </select>
               </div>
               <div class="form-group">
-                <label for="quantity">Cantidad (Toneladas)</label>
-                <input 
-                  v-model.number="formData.quantity"
-                  id="quantity"
-                  type="number"
-                  step="0.1"
-                  placeholder="Ej: 50.5"
-                  required
-                />
-              </div>
-              <div class="form-group">
-                <label for="price">Precio (Bs/Tonelada)</label>
-                <input 
-                  v-model.number="formData.price"
-                  id="price"
-                  type="number"
-                  step="0.01"
-                  placeholder="Ej: 150.50"
-                  required
-                />
+                <label for="quantity">Cantidad Disponible</label>
+                <div class="quantity-input-group">
+                  <input 
+                    v-model.number="formData.quantity"
+                    id="quantity"
+                    type="number"
+                    step="0.1"
+                    placeholder="0.0"
+                    required
+                  />
+                  <span v-if="selectedProduct" class="unit-badge">{{ selectedProduct.unit }}</span>
+                </div>
               </div>
             </div>
             <button type="submit" class="btn-submit">
@@ -146,8 +142,8 @@
                 <thead>
                   <tr>
                     <th>Producto</th>
-                    <th class="text-right">Cantidad (ton)</th>
-                    <th class="text-right">Precio (Bs/ton)</th>
+                    <th class="text-right">Cantidad</th>
+                    <th class="text-right">Precio (Bs/unidad)</th>
                     <th class="text-right">Subtotal (Bs)</th>
                     <th class="text-center">Acción</th>
                   </tr>
@@ -209,18 +205,22 @@
 import { ref, computed } from 'vue';
 import { useMapPoints } from '@/pages/dashboard/composables/useMapPoints';
 import { useMaterialsConfig } from '@/pages/dashboard/composables/useMaterialsConfig';
+import { useSetupStore } from '@/pages/setup/composables/useSetupStore';
 
 const mapPoints = useMapPoints();
 const materialsConfig = useMaterialsConfig();
+const setupStore = useSetupStore();
 
 const activePointId = ref(null);
 const searchPoint = ref('');
 const filterType = ref('');
 const formData = ref({
-  type: '',
-  quantity: '',
-  price: ''
+  productId: '',
+  quantity: ''
 });
+
+// Obtener productos configurados
+const products = computed(() => setupStore.products || []);
 
 const points = computed(() => mapPoints.allPoints.value);
 
@@ -235,6 +235,12 @@ const filteredPoints = computed(() => {
 const selectedPoint = computed(() => {
   if (!activePointId.value) return null;
   return points.value.find(p => p.id === activePointId.value);
+});
+
+// Obtener el producto seleccionado
+const selectedProduct = computed(() => {
+  if (!formData.value.productId) return null;
+  return products.value.find(p => p.id === parseInt(formData.value.productId));
 });
 
 const totalMaterials = computed(() => {
@@ -270,23 +276,24 @@ const selectPoint = (pointId) => {
 
 const resetForm = () => {
   formData.value = {
-    type: '',
-    quantity: '',
-    price: ''
+    productId: '',
+    quantity: ''
   };
 };
 
 const addMaterial = () => {
-  if (!formData.value.type.trim() || !formData.value.quantity || !formData.value.price) {
-    alert('Por favor completa todos los campos');
+  if (!formData.value.productId || !formData.value.quantity) {
+    alert('Por favor selecciona un producto y completa la cantidad');
     return;
   }
 
-  if (activePointId.value) {
+  if (activePointId.value && selectedProduct.value) {
     materialsConfig.addMaterial(activePointId.value, {
-      type: formData.value.type,
+      type: selectedProduct.value.name,
+      unit: selectedProduct.value.unit,
       quantity: formData.value.quantity,
-      price: formData.value.price
+      price: selectedProduct.value.price,
+      productId: selectedProduct.value.id
     });
     resetForm();
   }
@@ -678,7 +685,7 @@ if (points.value.length > 0 && !activePointId.value) {
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 0.7rem;
   margin-bottom: 0.7rem;
 }
@@ -697,7 +704,8 @@ if (points.value.length > 0 && !activePointId.value) {
   letter-spacing: 0.3px;
 }
 
-.form-group input {
+.form-group input,
+.product-select {
   padding: 0.5rem;
   background: rgba(14, 18, 26, 0.5);
   border: 1px solid rgba(212, 163, 115, 0.3);
@@ -707,10 +715,44 @@ if (points.value.length > 0 && !activePointId.value) {
   transition: all 0.3s ease;
 }
 
-.form-group input:focus {
+.product-select {
+  cursor: pointer;
+}
+
+.product-select option {
+  background: #0a0f1a;
+  color: #ffffff;
+}
+
+.form-group input:focus,
+.product-select:focus {
   outline: none;
   border-color: #d4a373;
   box-shadow: 0 0 0 3px rgba(212, 163, 115, 0.1);
+}
+
+.quantity-input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.quantity-input-group input {
+  width: 100%;
+  padding-right: 2.5rem;
+}
+
+.unit-badge {
+  position: absolute;
+  right: 0.5rem;
+  background: rgba(212, 163, 115, 0.2);
+  color: #d4a373;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  pointer-events: none;
 }
 
 .btn-submit {

@@ -12,7 +12,11 @@
         <button class="nav-btn" title="Configuración">
           <i class="fas fa-cog"></i>
         </button>
-        <button class="nav-btn logout-btn" title="Cerrar Sesión">
+        <button
+          class="nav-btn logout-btn"
+          title="Cerrar Sesión"
+          @click="logout"
+        >
           <i class="fas fa-sign-out-alt"></i>
         </button>
       </div>
@@ -21,13 +25,52 @@
 </template>
 
 <script setup>
-</script>
+import { useRouter } from "vue-router";
+import { logoutAPI } from "@/services/api";
+import { useSetupStore } from "@/pages/setup/composables/useSetupStore";
+
+const router = useRouter();
+const setupStore = useSetupStore();
+
+const logout = async () => {
+  try {
+    const result = await logoutAPI();
+    console.log("Logout API response:", result);
+
+    setupStore.resetSetupData();
+
+    sessionStorage.clear();
+    localStorage.clear();
+
+    sessionStorage.removeItem("newUserData");
+    sessionStorage.removeItem("setupStore");
+    sessionStorage.removeItem("setupCompany");
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("userId");
+
+    console.log("Sesión cerrada. Almacenamiento limpiado.");
+
+    router.push("/");
+  } catch (error) {
+    console.error("Error al cerrar sesión:", error);
+
+    setupStore.resetSetupData();
+    sessionStorage.clear();
+    localStorage.clear();
+    router.push("/");
+  }
+};
+</script> 
 
 <style scoped>
 .navbar-widget {
-  background: rgba(18, 24, 34, 0.9);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(212, 163, 115, 0.2);
+  background: linear-gradient(
+    90deg,
+    rgba(10, 15, 26, 0.95) 0%,
+    rgba(20, 28, 40, 0.92) 100%
+  );
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(212, 163, 115, 0.15);
   padding: 1.2rem 2rem;
   position: sticky;
   top: 0;
@@ -77,8 +120,8 @@
 }
 
 .nav-btn {
-  background: rgba(212, 163, 115, 0.1);
-  border: 1px solid rgba(212, 163, 115, 0.3);
+  background: rgba(212, 163, 115, 0.08);
+  border: 1px solid rgba(212, 163, 115, 0.2);
   color: #d4a373;
   width: 40px;
   height: 40px;
@@ -92,19 +135,19 @@
 }
 
 .nav-btn:hover {
-  background: rgba(212, 163, 115, 0.2);
-  border-color: #d4a373;
+  background: rgba(212, 163, 115, 0.15);
+  border-color: rgba(212, 163, 115, 0.4);
   transform: translateY(-2px);
 }
 
 .nav-btn.logout-btn {
   color: #e05a5a;
-  border-color: rgba(224, 61, 61, 0.3);
-  background: rgba(224, 61, 61, 0.1);
+  border-color: rgba(224, 61, 61, 0.2);
+  background: rgba(224, 61, 61, 0.08);
 }
 
 .nav-btn.logout-btn:hover {
-  background: rgba(224, 61, 61, 0.2);
-  border-color: #e05a5a;
+  background: rgba(224, 61, 61, 0.15);
+  border-color: rgba(224, 61, 61, 0.4);
 }
 </style>

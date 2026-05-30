@@ -16,13 +16,10 @@
 
       <FooterSection />
     </div>
-
-    <AccessModal ref="modalRef" />
   </div>
 </template>
 
 <script setup>
-import { ref } from "vue";
 import { useRouter } from "vue-router";
 
 // Componentes
@@ -32,13 +29,11 @@ import FeaturesGrid from "./components/FeaturesGrid.vue";
 import MethodsSection from "./components/MethodsSection.vue";
 import CTASection from "./components/CTASection.vue";
 import FooterSection from "./components/FooterSection.vue";
-import AccessModal from "./components/AccessModal.vue";
 
 const router = useRouter();
-const modalRef = ref(null);
 
 const openAccessModal = () => {
-  modalRef.value?.open();
+  router.push("/login");
 };
 
 const handleDashboard = () => {

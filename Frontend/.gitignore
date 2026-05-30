@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+AppEjemplo.html
+LandingPage.html
+loginRegister.html

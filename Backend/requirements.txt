@@ -3,3 +3,7 @@ uvicorn[standard]
 motor
 pymongo
 python-dotenv
+argon2-cffi
+email-validator
+pydantic[email]
+pydantic-settings
