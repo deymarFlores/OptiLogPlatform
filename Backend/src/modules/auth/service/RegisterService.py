@@ -1,9 +1,9 @@
 from src.core.database import db
 from src.modules.auth.schemas.AuthSchema import RegisterSchema
-from passlib.context import CryptContext
+from argon2 import PasswordHasher
 from fastapi import HTTPException
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_hasher = PasswordHasher()
 
 def register(data: RegisterSchema):
     try:
@@ -14,8 +14,8 @@ def register(data: RegisterSchema):
         if existing_user:
             raise HTTPException(status_code=400, detail="El usuario ya existe")
         
-        # Hashear contraseña
-        hashed_password = pwd_context.hash(data.password)
+        # Hashear contraseña con Argon2
+        hashed_password = pwd_hasher.hash(data.password)
         
         # Crear nuevo usuario
         new_user = {

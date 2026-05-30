@@ -1,9 +1,10 @@
 from src.core.database import db
 from src.modules.auth.schemas.AuthSchema import LoginSchema
-from passlib.context import CryptContext
+from argon2 import PasswordHasher
+from argon2.exceptions import VerifyMismatchError, InvalidHash
 from fastapi import HTTPException
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_hasher = PasswordHasher()
 
 def login(data: LoginSchema):
     try:
@@ -15,8 +16,10 @@ def login(data: LoginSchema):
         if not user:
             raise HTTPException(status_code=401, detail="Credenciales inválidas")
         
-        # Verificar contraseña
-        if not pwd_context.verify(data.password, user["password"]):
+        # Verificar contraseña con Argon2
+        try:
+            pwd_hasher.verify(user["password"], data.password)
+        except (VerifyMismatchError, InvalidHash):
             raise HTTPException(status_code=401, detail="Credenciales inválidas")
         
         return {
