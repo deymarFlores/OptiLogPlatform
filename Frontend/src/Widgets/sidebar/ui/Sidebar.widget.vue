@@ -4,62 +4,110 @@
       <h3><i class="fas fa-map-marker-alt"></i> Mis Puntos</h3>
     </div>
 
-    <div class="sidebar-section">
-      <h4 class="section-title">
-        <i class="fas fa-warehouse"></i> Almacenes
-        <span v-if="pointsByType.almacenes.length > 0" class="count-badge">{{ pointsByType.almacenes.length }}</span>
-      </h4>
-      <div class="items-list">
-        <p v-if="pointsByType.almacenes.length === 0" class="empty-message">No hay puntos registrados</p>
-        <div v-for="point in pointsByType.almacenes" :key="point.id" class="point-item">
-          <div class="point-info">
-            <i :class="`fas ${point.icon}`"></i>
-            <div class="point-details">
-              <p class="point-name">{{ point.name }}</p>
-              <p class="point-coords">{{ point.lat.toFixed(4) }}, {{ point.lng.toFixed(4) }}</p>
-            </div>
-          </div>
-          <button class="btn-delete" @click="deletePoint(point.id)" title="Eliminar">
-            <i class="fas fa-trash-alt"></i>
-          </button>
-        </div>
-      </div>
+    <div class="sidebar-section sucursales-section">
+      <button
+        v-if="!isEditSucursalesMode"
+        class="btn-action btn-add-sucursal"
+        @click="handleAddSucursal"
+      >
+        <i class="fas fa-plus"></i> Agregar Sucursal
+      </button>
+
+      <button v-else class="btn-action btn-stop-edit" @click="handleStopEdit">
+        <i class="fas fa-check"></i> Guardar y Cerrar
+      </button>
     </div>
 
-    <div class="sidebar-section">
+    <div v-for="type in locationTypes" :key="type.id" class="sidebar-section">
       <h4 class="section-title">
-        <i class="fas fa-store"></i> Tiendas
-        <span v-if="pointsByType.tiendas.length > 0" class="count-badge">{{ pointsByType.tiendas.length }}</span>
+        <i :class="`fas ${type.icon}`"></i> {{ type.name }}
+        <span
+          v-if="
+            (sucursalesByType[type.id] &&
+              sucursalesByType[type.id].length > 0) ||
+            (pointsByType[type.name] && pointsByType[type.name].length > 0)
+          "
+          class="count-badge"
+        >
+          {{
+            (sucursalesByType[type.id] ? sucursalesByType[type.id].length : 0) +
+            (pointsByType[type.name] ? pointsByType[type.name].length : 0)
+          }}
+        </span>
       </h4>
+
       <div class="items-list">
-        <p v-if="pointsByType.tiendas.length === 0" class="empty-message">No hay puntos registrados</p>
-        <div v-for="point in pointsByType.tiendas" :key="point.id" class="point-item">
+        <div
+          v-for="sucursal in sucursalesByType[type.id] || []"
+          :key="sucursal.id"
+          class="point-item"
+        >
+          <div class="point-info">
+            <i :class="`fas ${type.icon}`"></i>
+            <div class="point-details">
+              <p class="point-name">{{ sucursal.name }}</p>
+              <p class="point-coords">
+                {{ sucursal.lat.toFixed(4) }}, {{ sucursal.lng.toFixed(4) }}
+              </p>
+            </div>
+          </div>
+          <button
+            class="btn-delete"
+            @click="deleteSucursal(sucursal.id)"
+            title="Eliminar"
+          >
+            <i class="fas fa-trash-alt"></i>
+          </button>
+        </div>
+
+        <div
+          v-for="point in pointsByType[type.name] || []"
+          :key="point.id"
+          class="point-item"
+        >
           <div class="point-info">
             <i :class="`fas ${point.icon}`"></i>
             <div class="point-details">
               <p class="point-name">{{ point.name }}</p>
-              <p class="point-coords">{{ point.lat.toFixed(4) }}, {{ point.lng.toFixed(4) }}</p>
+              <p class="point-coords">
+                {{ point.lat.toFixed(4) }}, {{ point.lng.toFixed(4) }}
+              </p>
             </div>
           </div>
-          <button class="btn-delete" @click="deletePoint(point.id)" title="Eliminar">
+          <button
+            class="btn-delete"
+            @click="deletePoint(point.id)"
+            title="Eliminar"
+          >
             <i class="fas fa-trash-alt"></i>
           </button>
         </div>
+
+        <p
+          v-if="
+            (!sucursalesByType[type.id] ||
+              sucursalesByType[type.id].length === 0) &&
+            (!pointsByType[type.name] || pointsByType[type.name].length === 0)
+          "
+          class="empty-message"
+        >
+          Sin registros
+        </p>
       </div>
     </div>
 
     <div class="sidebar-actions">
-      <button 
-        class="btn-action btn-routes" 
-        @click="handleRoutesClick" 
+      <button
+        class="btn-action btn-routes"
+        @click="handleRoutesClick"
         :disabled="allPoints.length < 2"
         title="Requiere al menos 2 puntos"
       >
         <i class="fas fa-route"></i> Gestión de Conexiones
       </button>
-      <button 
-        class="btn-action btn-materials" 
-        @click="handleMaterialsClick" 
+      <button
+        class="btn-action btn-materials"
+        @click="handleMaterialsClick"
         :disabled="allPoints.length === 0"
       >
         <i class="fas fa-boxes"></i> Gestión de Materiales
@@ -70,7 +118,7 @@
     </div>
 
     <Teleport to="body">
-      <ConfirmationModal 
+      <ConfirmationModal
         :isOpen="showDeleteConfirm"
         title="Eliminar Punto"
         message="¿Estás seguro de que deseas eliminar este punto? Esta acción no se puede deshacer."
@@ -86,33 +134,96 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useMapPoints } from '@/pages/dashboard/composables/useMapPoints';
-import { ConfirmationModal } from '@/Features/confirmation';
+import { ref, onMounted, computed } from "vue";
+import { useMapPoints } from "@/pages/dashboard/composables/useMapPoints";
+import { useSucursalesManager } from "@/pages/dashboard/composables/useSucursalesManager";
+import { useSetupStore } from "@/pages/setup/composables/useSetupStore";
+import { ConfirmationModal } from "@/Features/confirmation";
+
+const props = defineProps({
+  isEditSucursalesMode: {
+    type: Boolean,
+    default: false,
+  },
+});
 
 const mapPoints = useMapPoints();
 const pointsByType = mapPoints.pointsByType;
 const allPoints = mapPoints.allPoints;
 
-const emit = defineEmits(['add-point', 'show-materials', 'show-routes']);
+const setupStore = useSetupStore();
+
+const locationTypes = computed(() => setupStore.pointTypes.value);
+const pointTypeNames = computed(() => mapPoints.getPointTypeNames());
+
+const sucursalesManager = useSucursalesManager();
+const sucursales = computed(() => sucursalesManager.sucursales.value);
+
+const sucursalesByType = computed(() => {
+  const grouped = {};
+
+  locationTypes.value.forEach((type) => {
+    grouped[type.id] = sucursales.value.filter(
+      (s) => s.type_location_id === type.id,
+    );
+  });
+
+  return grouped;
+});
+
+const emit = defineEmits([
+  "add-point",
+  "show-materials",
+  "show-routes",
+  "toggle-edit-mode",
+]);
 
 const showDeleteConfirm = ref(false);
 const pendingDeleteId = ref(null);
+const pendingSucursalDeleteId = ref(null);
+
+const getTypeById = (typeId) => {
+  return locationTypes.value.find((t) => t.id === typeId);
+};
+
+const getTypeIcon = (typeName) => {
+  const type = locationTypes.value.find((t) => t.name === typeName);
+  return type ? `fas ${type.icon}` : "fas fa-map-pin";
+};
+
+onMounted(() => {
+  sucursalesManager.loadSucursales();
+});
 
 const handleRoutesClick = () => {
   if (allPoints.value.length >= 2) {
-    emit('show-routes');
+    emit("show-routes");
   }
 };
 
 const handleMaterialsClick = () => {
   if (allPoints.value.length > 0) {
-    emit('show-materials');
+    emit("show-materials");
   }
+};
+
+const handleAddSucursal = () => {
+  emit("toggle-edit-mode", true);
+};
+
+const handleStopEdit = () => {
+  emit("toggle-edit-mode", false);
 };
 
 const deletePoint = (id) => {
   pendingDeleteId.value = id;
+  pendingSucursalDeleteId.value = null;
+  showDeleteConfirm.value = true;
+};
+
+const deleteSucursal = (id) => {
+  pendingSucursalDeleteId.value = id;
+  pendingDeleteId.value = null;
   showDeleteConfirm.value = true;
 };
 
@@ -120,12 +231,16 @@ const confirmDelete = () => {
   if (pendingDeleteId.value !== null) {
     mapPoints.removePoint(pendingDeleteId.value);
     pendingDeleteId.value = null;
+  } else if (pendingSucursalDeleteId.value !== null) {
+    sucursalesManager.deleteSucursal(pendingSucursalDeleteId.value);
+    pendingSucursalDeleteId.value = null;
   }
   showDeleteConfirm.value = false;
 };
 
 const cancelDelete = () => {
   pendingDeleteId.value = null;
+  pendingSucursalDeleteId.value = null;
   showDeleteConfirm.value = false;
 };
 </script>
@@ -268,7 +383,7 @@ const cancelDelete = () => {
   font-size: 0.7rem;
   color: #8e9aab;
   margin: 0;
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
 }
 
 .btn-delete {
@@ -362,6 +477,76 @@ const cancelDelete = () => {
 
 .btn-import {
   background: transparent;
+}
+
+.sucursales-section {
+  border-bottom: 2px solid rgba(212, 163, 115, 0.25);
+  padding-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.btn-add-sucursal {
+  width: 100%;
+  background: #d4a373;
+  color: #0a0f1a;
+  border-color: #d4a373;
+  font-weight: 700;
+  margin-top: 0.75rem;
+}
+
+.btn-add-sucursal:hover {
+  background: #e0b082;
+  border-color: #e0b082;
+  transform: translateY(-2px);
+}
+
+.btn-stop-edit {
+  width: 100%;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+  color: #ffffff;
+  border-color: #ff6b6b;
+  font-weight: 700;
+  margin-top: 0.75rem;
+  animation: pulse-button 0.6s ease-in-out infinite;
+}
+
+.btn-stop-edit:hover {
+  background: linear-gradient(135deg, #ff5555 0%, #dd4a42 100%);
+  border-color: #ff5555;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+  animation: none;
+}
+
+@keyframes pulse-button {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(255, 107, 107, 0.1);
+  }
+}
+
+.btn-edit-sucursal {
+  width: 100%;
+  margin-top: 0.75rem;
+  background: rgba(212, 163, 115, 0.15);
+  border-color: rgba(212, 163, 115, 0.35);
+  transition: all 0.3s ease;
+}
+
+.btn-edit-sucursal:hover {
+  background: rgba(212, 163, 115, 0.25);
+  border-color: rgba(212, 163, 115, 0.5);
+  transform: translateY(-2px);
+}
+
+.btn-edit-sucursal.active {
+  background: #d4a373;
+  color: #0a0f1a;
+  border-color: #d4a373;
+  font-weight: 700;
 }
 
 @media (max-width: 768px) {
