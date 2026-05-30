@@ -7,6 +7,8 @@ from bson.objectid import ObjectId
 class TypeMaterialService:
     def __init__(self):
         self.collection = db["type_materials"]
+        self.location_stock_collection = db["location_stock"]
+        self.companies_collection = db["companies"]
 
     def create(self, company_id: str, data: TypeMaterialSchema):
         try:
@@ -80,3 +82,49 @@ class TypeMaterialService:
             return {"message": "Tipo de material eliminado"}
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error al eliminar tipo de material: {str(e)}")
+
+    # NUEVO MÉTODO PARA BÚSQUEDA DE PRODUCTOS
+    def search_products(self, query: str):
+        try:
+            materials = list(self.collection.find({
+                "name": {"$regex": query, "$options": "i"}
+            }))
+            
+            if not materials:
+                return []
+            
+            results = []
+            for material in materials:
+                company = self.companies_collection.find_one({
+                    "_id": material["company_id"]
+                })
+                
+                if not company:
+                    continue
+                
+                total_stock = self._get_total_stock(str(material["_id"]))
+                
+                results.append({
+                    "id": str(material["_id"]),
+                    "name": material["name"],
+                    "price": material.get("price", 0),
+                    "units": material.get("units", "unidad"),
+                    "company_id": str(company["_id"]),
+                    "company_name": company["name"],
+                    "company_address": company.get("address", ""),
+                    "available_stock": total_stock
+                })
+            
+            return results
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error al buscar productos: {str(e)}")
+
+    def _get_total_stock(self, material_id: str):
+        try:
+            stocks = list(self.location_stock_collection.find({
+                "type_material_id": ObjectId(material_id)
+            }))
+            total = sum(stock.get("stock", 0) for stock in stocks)
+            return total
+        except:
+            return 0

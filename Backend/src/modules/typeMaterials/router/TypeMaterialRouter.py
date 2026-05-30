@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from src.modules.typeMaterials.schemas.TypeMaterials import TypeMaterialSchema
 from src.modules.typeMaterials.service.TypeMaterialService import TypeMaterialService
 
@@ -29,3 +29,10 @@ async def update_type_material(type_material_id: str, data: TypeMaterialSchema):
 @router.delete("/{type_material_id}")
 async def delete_type_material(type_material_id: str):
     return service.delete(type_material_id)
+
+
+@router.get("/search/")
+async def search_products(
+    q: str = Query(..., min_length=2, description="Término de búsqueda")
+):
+    return service.search_products(q)
