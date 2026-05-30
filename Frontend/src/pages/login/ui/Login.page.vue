@@ -11,75 +11,95 @@
           <p>Plataforma de Optimización Logística · Investigación Operativa</p>
         </div>
 
-        <!-- Tabs Login / Register -->
         <div class="auth-tabs">
-          <button class="tab-btn active" @click="switchTab('login')">Iniciar Sesión</button>
-          <button class="tab-btn" @click="switchTab('register')">Registrarse</button>
+          <button class="tab-btn active" @click="switchTab('login')">
+            Iniciar Sesión
+          </button>
+          <button class="tab-btn" @click="switchTab('register')">
+            Registrarse
+          </button>
         </div>
 
-        <!-- FORMULARIO LOGIN -->
         <div v-show="activeTab === 'login'" class="auth-form active-form">
           <form @submit.prevent="handleLogin">
             <div class="input-group">
               <label><i class="far fa-envelope"></i> Correo electrónico</label>
-              <input 
+              <input
                 v-model="loginForm.email"
-                type="email" 
-                placeholder="ejecutivo@optilog.bo" 
-                required 
+                type="email"
+                placeholder="ejecutivo@optilog.bo"
+                required
                 autocomplete="email"
               />
             </div>
             <div class="input-group">
               <label><i class="fas fa-lock"></i> Contraseña</label>
-              <input 
+              <input
                 v-model="loginForm.password"
-                type="password" 
-                placeholder="••••••••" 
-                required 
+                type="password"
+                placeholder="••••••••"
+                required
                 autocomplete="current-password"
               />
             </div>
             <div class="forgot-link">
-              <a href="#" @click.prevent="showForgotMessage">¿Olvidó su contraseña?</a>
+              <a href="#" @click.prevent="showForgotMessage"
+                >¿Olvidó su contraseña?</a
+              >
             </div>
             <div class="checkbox-group">
-              <input v-model="loginForm.remember" type="checkbox" id="rememberMe">
+              <input
+                v-model="loginForm.remember"
+                type="checkbox"
+                id="rememberMe"
+              />
               <label for="rememberMe">Mantener sesión iniciada</label>
             </div>
-            <button type="submit" class="btn-auth"><i class="fas fa-arrow-right-to-bracket"></i> Acceder al Dashboard</button>
+            <button type="submit" class="btn-auth">
+              <i class="fas fa-arrow-right-to-bracket"></i> Acceder al Dashboard
+            </button>
           </form>
           <div class="separator">
-            <hr><span>O continuar con</span><hr>
+            <hr />
+            <span>O continuar con</span>
+            <hr />
           </div>
           <div class="social-buttons">
-            <button type="button" class="social-btn" @click="socialLogin('google')"><i class="fab fa-google"></i> Google</button>
-            <button type="button" class="social-btn" @click="socialLogin('linkedin')"><i class="fab fa-linkedin-in"></i> LinkedIn</button>
+            <button
+              type="button"
+              class="social-btn"
+              @click="socialLogin('google')"
+            >
+              <i class="fab fa-google"></i> Google
+            </button>
+            <button
+              type="button"
+              class="social-btn"
+              @click="socialLogin('linkedin')"
+            >
+              <i class="fab fa-linkedin-in"></i> LinkedIn
+            </button>
           </div>
           <div class="terms-text">
-            Al iniciar sesión acepta los <a href="#">Términos de Servicio</a> y <a href="#">Política de Privacidad</a>.
+            Al iniciar sesión acepta los <a href="#">Términos de Servicio</a> y
+            <a href="#">Política de Privacidad</a>.
           </div>
         </div>
 
-        <!-- FORMULARIO REGISTER -->
         <div v-show="activeTab === 'register'" class="auth-form active-form">
           <form @submit.prevent="handleRegister">
             <div class="input-group">
               <label><i class="fas fa-user-tie"></i> Nombre completo</label>
-              <input 
+              <input
                 v-model="registerForm.fullname"
-                type="text" 
-                placeholder="Carlos Mendoza" 
+                type="text"
+                placeholder="Carlos Mendoza"
                 required
               />
             </div>
             <div class="input-group">
               <label><i class="fas fa-user-tag"></i> Tipo de Cuenta</label>
-              <select 
-                v-model="registerForm.role"
-                required
-                class="role-select"
-              >
+              <select v-model="registerForm.role" required class="role-select">
                 <option value="">Seleccionar tipo de cuenta...</option>
                 <option value="empresa">Empresa / Organización</option>
                 <option value="cliente">Cliente</option>
@@ -87,74 +107,98 @@
             </div>
             <div class="input-group">
               <label><i class="far fa-envelope"></i> Correo electrónico</label>
-              <input 
+              <input
                 v-model="registerForm.email"
-                type="email" 
-                placeholder="contacto@empresa.bo" 
+                type="email"
+                placeholder="contacto@empresa.bo"
                 required
               />
             </div>
             <div class="input-group">
               <label><i class="fas fa-lock"></i> Contraseña</label>
-              <input 
+              <input
                 v-model="registerForm.password"
-                type="password" 
-                placeholder="••••••••" 
+                type="password"
+                placeholder="••••••••"
                 required
               />
             </div>
             <div class="input-group">
-              <label><i class="fas fa-check-circle"></i> Confirmar contraseña</label>
-              <input 
+              <label
+                ><i class="fas fa-check-circle"></i> Confirmar contraseña</label
+              >
+              <input
                 v-model="registerForm.confirmPassword"
-                type="password" 
-                placeholder="••••••••" 
+                type="password"
+                placeholder="••••••••"
                 required
               />
             </div>
             <div class="checkbox-group">
-              <input v-model="registerForm.terms" type="checkbox" id="acceptTerms" required>
-              <label for="acceptTerms">Acepto los <a href="#" style="color:#d4a373;">términos y condiciones</a> y la política de privacidad</label>
+              <input
+                v-model="registerForm.terms"
+                type="checkbox"
+                id="acceptTerms"
+                required
+              />
+              <label for="acceptTerms"
+                >Acepto los
+                <a href="#" style="color: #d4a373">términos y condiciones</a> y
+                la política de privacidad</label
+              >
             </div>
-            <button type="submit" class="btn-auth"><i class="fas fa-user-plus"></i> Crear cuenta</button>
+            <button type="submit" class="btn-auth">
+              <i class="fas fa-user-plus"></i> Crear cuenta
+            </button>
           </form>
           <div class="separator">
-            <hr><span>Registro corporativo</span><hr>
+            <hr />
+            <span>Registro corporativo</span>
+            <hr />
           </div>
-          <p style="text-align: center; font-size:0.7rem; color:#7a8799;">Demo académica · Datos no almacenados persistentemente</p>
+          <p style="text-align: center; font-size: 0.7rem; color: #7a8799">
+            Demo académica · Datos no almacenados persistentemente
+          </p>
         </div>
       </div>
     </div>
 
-    <!-- Toast message -->
     <div v-if="message" :class="['message-toast', { error: message.isError }]">
-      <i :class="['fas', message.isError ? 'fa-exclamation-triangle' : 'fa-check-circle']"></i>
+      <i
+        :class="[
+          'fas',
+          message.isError ? 'fa-exclamation-triangle' : 'fa-check-circle',
+        ]"
+      ></i>
       {{ message.text }}
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+import { loginAPI, registerAPI, companiesAPI } from "@/services/api";
+import { useSetupStore } from "@/pages/setup/composables/useSetupStore";
 
 const router = useRouter();
-const activeTab = ref('login');
+const setupStore = useSetupStore();
+const activeTab = ref("login");
 const message = ref(null);
 
 const loginForm = ref({
-  email: '',
-  password: '',
-  remember: false
+  email: "",
+  password: "",
+  remember: false,
 });
 
 const registerForm = ref({
-  fullname: '',
-  role: '',
-  email: '',
-  password: '',
-  confirmPassword: '',
-  terms: false
+  fullname: "",
+  role: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+  terms: false,
 });
 
 const registeredUsers = ref([
@@ -162,13 +206,13 @@ const registeredUsers = ref([
     fullname: "Ana Rojas",
     company: "Distribuciones Andinas",
     email: "ana@distribuciones.bo",
-    password: "Andinas123"
-  }
+    password: "Andinas123",
+  },
 ]);
 
 const DEMO_CREDENTIALS = {
   email: "ejecutivo@optilog.bo",
-  password: "OptiLog2025"
+  password: "OptiLog2025",
 };
 
 const switchTab = (tab) => {
@@ -182,105 +226,240 @@ const showMessage = (text, isError = false) => {
   }, 3500);
 };
 
-const handleLogin = () => {
+const handleLogin = async () => {
   const { email, password } = loginForm.value;
-  
-  const isDemoValid = (email === DEMO_CREDENTIALS.email && password === DEMO_CREDENTIALS.password);
-  const registeredUser = registeredUsers.value.find(user => user.email === email && user.password === password);
-  
-  if (isDemoValid) {
-    const userName = "Ejecutivo Principal";
-    showMessage(`✅ Acceso concedido. Bienvenido ${userName}. Redirigiendo al dashboard...`);
+
+  showMessage("🔐 Validando credenciales...");
+
+  const apiResponse = await loginAPI(email, password);
+
+  if (apiResponse.success) {
+    const { data } = apiResponse;
+    const userName = data.name || "Usuario";
+    const role = data.role || "empresa";
+    const userId = data.user_id;
+
+    showMessage(
+      `✅ Acceso concedido. Bienvenido ${userName}. Cargando datos...`,
+    );
+
+    setupStore.setUserId(userId);
+
+    if (role === "empresa") {
+      const companyResponse = await companiesAPI.getByUser(userId);
+      if (
+        companyResponse.success &&
+        companyResponse.data &&
+        companyResponse.data.length > 0
+      ) {
+        const company = companyResponse.data[0];
+        setupStore.setCompany({
+          id: company.id,
+          name: company.name,
+          description: company.description || "",
+          city: company.address || "",
+          phone: company.phone || "",
+        });
+        console.log("✅ Empresa cargada:", company);
+      }
+    }
+
     setTimeout(() => {
-      // LOGIN Demo: Ir a dashboard de empresa
-      router.push('/dashboard');
-    }, 1500);
-  } else if (registeredUser) {
-    const userName = registeredUser.fullname;
-    const role = registeredUser.role || 'empresa'; // Default a empresa
-    
-    showMessage(`✅ Acceso concedido. Bienvenido ${userName}. Redirigiendo...`);
-    setTimeout(() => {
-      sessionStorage.setItem('currentUserData', JSON.stringify({
-        fullname: userName,
-        role
-      }));
-      
-      if (role === 'empresa') {
-        router.push('/dashboard');
+      sessionStorage.setItem(
+        "currentUserData",
+        JSON.stringify({
+          fullname: userName,
+          role,
+          email,
+          userId,
+          token: data.token,
+        }),
+      );
+
+      if (role === "empresa") {
+        router.push("/dashboard");
       } else {
-        router.push('/client-dashboard');
+        router.push("/client-dashboard");
       }
     }, 1500);
   } else {
-    showMessage("❌ Credenciales incorrectas. Use ejecutivo@optilog.bo / OptiLog2025 o registre una cuenta.", true);
+    const isDemoValid =
+      email === DEMO_CREDENTIALS.email &&
+      password === DEMO_CREDENTIALS.password;
+    const registeredUser = registeredUsers.value.find(
+      (user) => user.email === email && user.password === password,
+    );
+
+    if (isDemoValid) {
+      const userName = "Ejecutivo Principal";
+      showMessage(
+        `✅ Acceso concedido. Bienvenido ${userName}. Redirigiendo al dashboard...`,
+      );
+      setTimeout(() => {
+        sessionStorage.setItem(
+          "currentUserData",
+          JSON.stringify({
+            fullname: userName,
+            role: "empresa",
+            email,
+          }),
+        );
+        router.push("/dashboard");
+      }, 1500);
+    } else if (registeredUser) {
+      const userName = registeredUser.fullname;
+      const role = registeredUser.role || "empresa";
+
+      showMessage(
+        `✅ Acceso concedido. Bienvenido ${userName}. Redirigiendo...`,
+      );
+      setTimeout(() => {
+        sessionStorage.setItem(
+          "currentUserData",
+          JSON.stringify({
+            fullname: userName,
+            role,
+            email,
+          }),
+        );
+
+        if (role === "empresa") {
+          router.push("/dashboard");
+        } else {
+          router.push("/client-dashboard");
+        }
+      }, 1500);
+    } else {
+      showMessage("❌ Credenciales incorrectas. Intente nuevamente.", true);
+    }
   }
 };
 
-const handleRegister = () => {
-  const { fullname, role, email, password, confirmPassword, terms } = registerForm.value;
-  
+const handleRegister = async () => {
+  const { fullname, role, email, password, confirmPassword, terms } =
+    registerForm.value;
+
   if (!fullname || !role || !email) {
     showMessage("Por favor complete todos los campos requeridos.", true);
     return;
   }
-  
+
   if (password !== confirmPassword) {
     showMessage("Las contraseñas no coinciden.", true);
     return;
   }
-  
+
   if (password.length < 6) {
     showMessage("La contraseña debe tener al menos 6 caracteres.", true);
     return;
   }
-  
+
   if (!terms) {
     showMessage("Debe aceptar los términos y condiciones.", true);
     return;
   }
-  
-  if (registeredUsers.value.some(u => u.email === email)) {
+
+  if (registeredUsers.value.some((u) => u.email === email)) {
     showMessage("Este correo ya está registrado. Inicie sesión.", true);
     return;
   }
-  
-  // Register user and redirect based on role
-  const newUser = { fullname, role, email, password };
-  registeredUsers.value.push(newUser);
-  
-  if (role === 'empresa') {
-    showMessage(`🎉 Registro exitoso, ${fullname}. Iniciando configuración de empresa...`);
-    setTimeout(() => {
-      // Empresa: Redirige a /setup para configuración inicial (3 pasos)
-      sessionStorage.setItem('newUserData', JSON.stringify({
-        fullname,
-        role
-      }));
-      router.push('/setup');
-    }, 1500);
+
+  showMessage("📝 Registrando usuario...");
+
+  const apiResponse = await registerAPI(fullname, role, email, password);
+
+  if (apiResponse.success) {
+    const { data } = apiResponse;
+
+    if (role === "empresa") {
+      showMessage(
+        `🎉 Registro exitoso, ${fullname}. Iniciando configuración de empresa...`,
+      );
+      setTimeout(() => {
+        sessionStorage.setItem(
+          "newUserData",
+          JSON.stringify({
+            userId: data.user_id,
+            fullname,
+            role,
+            email,
+            token: data.token,
+          }),
+        );
+        router.push("/setup");
+      }, 1500);
+    } else {
+      showMessage(
+        `🎉 Registro exitoso, ${fullname}. Redirigiendo a tu panel de cliente...`,
+      );
+      setTimeout(() => {
+        sessionStorage.setItem(
+          "currentUserData",
+          JSON.stringify({
+            userId: data.user_id,
+            fullname,
+            role,
+            email,
+            token: data.token,
+          }),
+        );
+        router.push("/client-dashboard");
+      }, 1500);
+    }
   } else {
-    showMessage(`🎉 Registro exitoso, ${fullname}. Redirigiendo a tu panel de cliente...`);
-    setTimeout(() => {
-      // Cliente: Redirige a /client-dashboard
-      sessionStorage.setItem('newUserData', JSON.stringify({
-        fullname,
-        role
-      }));
-      router.push('/client-dashboard');
-    }, 1500);
+    const newUser = { fullname, role, email, password };
+    registeredUsers.value.push(newUser);
+
+    if (role === "empresa") {
+      showMessage(
+        `🎉 Registro exitoso, ${fullname}. Iniciando configuración de empresa...`,
+      );
+      setTimeout(() => {
+        sessionStorage.setItem(
+          "newUserData",
+          JSON.stringify({
+            fullname,
+            role,
+          }),
+        );
+        router.push("/setup");
+      }, 1500);
+    } else {
+      showMessage(
+        `🎉 Registro exitoso, ${fullname}. Redirigiendo a tu panel de cliente...`,
+      );
+      setTimeout(() => {
+        const localUserId =
+          "user_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
+        sessionStorage.setItem(
+          "currentUserData",
+          JSON.stringify({
+            userId: localUserId,
+            fullname,
+            role,
+          }),
+        );
+        router.push("/client-dashboard");
+      }, 1500);
+    }
   }
 };
 
 const showForgotMessage = () => {
-  showMessage("📧 Instrucciones de recuperación enviadas a su correo corporativo (simulación académica).");
+  showMessage(
+    "📧 Instrucciones de recuperación enviadas a su correo corporativo (simulación académica).",
+  );
 };
 
 const socialLogin = (provider) => {
-  if (provider === 'google') {
-    showMessage("🔐 Autenticación con Google (Demo). En entorno real se integraría OAuth.");
+  if (provider === "google") {
+    showMessage(
+      "🔐 Autenticación con Google (Demo). En entorno real se integraría OAuth.",
+    );
   } else {
-    showMessage("🏢 Autenticación con LinkedIn (Demo corporativa). Redirigiendo al portal.");
+    showMessage(
+      "🏢 Autenticación con LinkedIn (Demo corporativa). Redirigiendo al portal.",
+    );
   }
 };
 </script>
@@ -306,7 +485,7 @@ const socialLogin = (provider) => {
   width: 100%;
   height: 100%;
   z-index: -2;
-  background-image: url('https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?q=80&w=2070&auto=format');
+  background-image: url("https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?q=80&w=2070&auto=format");
   background-size: cover;
   background-position: center 30%;
   filter: brightness(0.28) contrast(1.05);
@@ -319,7 +498,11 @@ const socialLogin = (provider) => {
   width: 100%;
   height: 100%;
   z-index: -1;
-  background: linear-gradient(135deg, rgba(10,15,26,0.94) 0%, rgba(20,28,40,0.88) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(10, 15, 26, 0.94) 0%,
+    rgba(20, 28, 40, 0.88) 100%
+  );
   backdrop-filter: blur(3px);
 }
 
@@ -341,7 +524,7 @@ const socialLogin = (provider) => {
   width: 100%;
   max-width: 480px;
   padding: 2.5rem;
-  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   transition: all 0.3s ease;
 }
 
@@ -378,7 +561,7 @@ const socialLogin = (provider) => {
   display: flex;
   gap: 1rem;
   margin-bottom: 2rem;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   padding-bottom: 0.5rem;
 }
 
@@ -393,7 +576,7 @@ const socialLogin = (provider) => {
   color: #8e9aab;
   transition: all 0.2s;
   border-radius: 12px;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 .tab-btn.active {
@@ -403,7 +586,7 @@ const socialLogin = (provider) => {
 
 .tab-btn:hover:not(.active) {
   color: #cbd5e6;
-  background: rgba(255,255,255,0.03);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .auth-form {
@@ -411,8 +594,14 @@ const socialLogin = (provider) => {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .input-group {
@@ -433,12 +622,12 @@ const socialLogin = (provider) => {
   width: 100%;
   padding: 0.9rem 1rem;
   background: rgba(10, 15, 26, 0.7);
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 1rem;
   color: #ffffff;
   font-size: 0.9rem;
   transition: all 0.2s;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 .input-group input:focus {
@@ -456,12 +645,12 @@ const socialLogin = (provider) => {
   width: 100%;
   padding: 0.9rem 1rem;
   background: rgba(10, 15, 26, 0.7);
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 1rem;
   color: #ffffff;
   font-size: 0.9rem;
   transition: all 0.2s;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   cursor: pointer;
 }
 
@@ -518,7 +707,7 @@ const socialLogin = (provider) => {
   color: #0a0f1a;
   cursor: pointer;
   transition: all 0.2s;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   margin-top: 0.5rem;
 }
 
@@ -558,7 +747,7 @@ const socialLogin = (provider) => {
   flex: 1;
   border: none;
   height: 1px;
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .social-buttons {
@@ -568,8 +757,8 @@ const socialLogin = (provider) => {
 
 .social-btn {
   flex: 1;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   padding: 0.7rem;
   border-radius: 1rem;
   cursor: pointer;
@@ -580,7 +769,7 @@ const socialLogin = (provider) => {
   gap: 0.6rem;
   color: #cbd5e6;
   font-size: 0.8rem;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 .social-btn:hover {
@@ -605,7 +794,7 @@ const socialLogin = (provider) => {
   z-index: 2000;
   backdrop-filter: blur(8px);
   animation: slideInRight 0.3s ease;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
 }
 
 .message-toast.error {
@@ -613,8 +802,14 @@ const socialLogin = (provider) => {
 }
 
 @keyframes slideInRight {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 .terms-text {
