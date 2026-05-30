@@ -26,11 +26,39 @@
 
 <script setup>
 import { useRouter } from "vue-router";
+import { logoutAPI } from "@/services/api";
+import { useSetupStore } from "@/pages/setup/composables/useSetupStore";
 
 const router = useRouter();
+const setupStore = useSetupStore();
 
-const logout = () => {
-   router.push("/");
+const logout = async () => {
+  try {
+    const result = await logoutAPI();
+    console.log("Logout API response:", result);
+
+    setupStore.resetSetupData();
+
+    sessionStorage.clear();
+    localStorage.clear();
+
+    sessionStorage.removeItem("newUserData");
+    sessionStorage.removeItem("setupStore");
+    sessionStorage.removeItem("setupCompany");
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("userId");
+
+    console.log("Sesión cerrada. Almacenamiento limpiado.");
+
+    router.push("/");
+  } catch (error) {
+    console.error("Error al cerrar sesión:", error);
+
+    setupStore.resetSetupData();
+    sessionStorage.clear();
+    localStorage.clear();
+    router.push("/");
+  }
 };
 </script>
 
