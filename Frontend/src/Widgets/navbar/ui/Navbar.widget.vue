@@ -60,7 +60,7 @@ const logout = async () => {
     router.push("/");
   }
 };
-</script>
+</script> 
 
 <style scoped>
 .navbar-widget {
