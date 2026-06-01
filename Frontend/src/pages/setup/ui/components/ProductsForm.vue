@@ -39,10 +39,11 @@
               <option value="unidad">Unidad</option>
               <option value="kg">Kilogramo (kg)</option>
               <option value="g">Gramo (g)</option>
-              <option value="L">Litro (L)</option>
-              <option value="mL">Mililitro (mL)</option>
+              <option value="m3">Metro cubico (m3)</option>
               <option value="m">Metro (m)</option>
               <option value="cm">Centímetro (cm)</option>
+              <option value="L">Litro (L)</option>
+              <option value="mL">Mililitro (mL)</option>
               <option value="h">Hora (h)</option>
               <option value="otro">Otro</option>
             </select>
@@ -210,7 +211,7 @@ const handleComplete = async () => {
     }
 
     const companyId = companyResult.data.id;
-    console.log("✅ Empresa creada con ID:", companyId);
+    console.log(" Empresa creada con ID:", companyId);
 
     setupStore.setCompany({
       ...company,
@@ -234,8 +235,11 @@ const handleComplete = async () => {
       }
 
       createdTypes.push(typeResult.data);
-      console.log("✅ Tipo creado:", typeResult.data.name);
+      console.log(" Tipo creado:", typeResult.data.name, "- ID:", typeResult.data.id);
     }
+
+    setupStore.setPointTypes(createdTypes);
+    console.log("📌 setupStore.pointTypes actualizado con IDs del backend");
 
     console.log("📤 Paso 3: Crear productos/materiales...");
     const createdProducts = [];
@@ -254,10 +258,10 @@ const handleComplete = async () => {
       }
 
       createdProducts.push(productResult.data);
-      console.log("✅ Producto creado:", productResult.data.name);
+      console.log(" Producto creado:", productResult.data.name);
     }
 
-    console.log("✅ ¡SETUP COMPLETADO! Todos los datos enviados al backend");
+    console.log(" ¡SETUP COMPLETADO! Todos los datos enviados al backend");
     console.log("  - Empresa: " + companyId);
     console.log("  - Tipos creados: " + createdTypes.length);
     console.log("  - Productos creados: " + createdProducts.length);

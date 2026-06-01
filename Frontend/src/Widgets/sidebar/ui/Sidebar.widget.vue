@@ -66,7 +66,7 @@
           class="point-item"
         >
           <div class="point-info">
-            <i :class="`fas ${point.icon}`"></i>
+            <i :class="`fas ${point.icon || type.icon}`"></i>
             <div class="point-details">
               <p class="point-name">{{ point.name }}</p>
               <p class="point-coords">
@@ -108,7 +108,12 @@
       <button
         class="btn-action btn-materials"
         @click="handleMaterialsClick"
-        :disabled="allPoints.length === 0"
+        :disabled="sucursalesManager.sucursales.length === 0"
+        :title="
+          sucursalesManager.sucursales.length === 0
+            ? 'Requiere al menos 1 sucursal'
+            : 'Administrar materiales por sucursal'
+        "
       >
         <i class="fas fa-boxes"></i> Gestión de Materiales
       </button>
@@ -154,16 +159,15 @@ const allPoints = mapPoints.allPoints;
 const setupStore = useSetupStore();
 
 const locationTypes = computed(() => setupStore.pointTypes.value);
-const pointTypeNames = computed(() => mapPoints.getPointTypeNames());
 
 const sucursalesManager = useSucursalesManager();
-const sucursales = computed(() => sucursalesManager.sucursales.value);
 
 const sucursalesByType = computed(() => {
   const grouped = {};
+  const sucursalesArray = sucursalesManager.sucursales.value || [];
 
   locationTypes.value.forEach((type) => {
-    grouped[type.id] = sucursales.value.filter(
+    grouped[type.id] = sucursalesArray.filter(
       (s) => s.type_location_id === type.id,
     );
   });
@@ -182,15 +186,6 @@ const showDeleteConfirm = ref(false);
 const pendingDeleteId = ref(null);
 const pendingSucursalDeleteId = ref(null);
 
-const getTypeById = (typeId) => {
-  return locationTypes.value.find((t) => t.id === typeId);
-};
-
-const getTypeIcon = (typeName) => {
-  const type = locationTypes.value.find((t) => t.name === typeName);
-  return type ? `fas ${type.icon}` : "fas fa-map-pin";
-};
-
 onMounted(() => {
   sucursalesManager.loadSucursales();
 });
@@ -202,7 +197,10 @@ const handleRoutesClick = () => {
 };
 
 const handleMaterialsClick = () => {
-  if (allPoints.value.length > 0) {
+  if (
+    sucursalesManager.sucursales.value &&
+    sucursalesManager.sucursales.value.length > 0
+  ) {
     emit("show-materials");
   }
 };
@@ -427,62 +425,15 @@ const cancelDelete = () => {
   gap: 0.5rem;
 }
 
-.btn-action:hover {
+.btn-action:hover:not(:disabled) {
   background: rgba(212, 163, 115, 0.2);
   border-color: rgba(212, 163, 115, 0.5);
   transform: translateY(-2px);
 }
 
-.btn-add {
-  background: #d4a373;
-  color: #0a0f1a;
-  border-color: #d4a373;
-  font-weight: 700;
-}
-
-.btn-add:hover {
-  background: #e0b082;
-  border-color: #e0b082;
-}
-
-.btn-materials {
-  background: rgba(212, 163, 115, 0.15);
-  border-color: rgba(212, 163, 115, 0.35);
-}
-
-.btn-materials:hover:not(:disabled) {
-  background: rgba(212, 163, 115, 0.25);
-  border-color: rgba(212, 163, 115, 0.5);
-}
-
-.btn-materials:disabled {
+.btn-action:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-.btn-routes {
-  background: rgba(212, 163, 115, 0.12);
-  border-color: rgba(212, 163, 115, 0.3);
-}
-
-.btn-routes:hover:not(:disabled) {
-  background: rgba(212, 163, 115, 0.2);
-  border-color: rgba(212, 163, 115, 0.5);
-}
-
-.btn-routes:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-import {
-  background: transparent;
-}
-
-.sucursales-section {
-  border-bottom: 2px solid rgba(212, 163, 115, 0.25);
-  padding-bottom: 1.5rem;
-  margin-bottom: 1.5rem;
 }
 
 .btn-add-sucursal {
@@ -526,27 +477,6 @@ const cancelDelete = () => {
   50% {
     box-shadow: 0 0 0 6px rgba(255, 107, 107, 0.1);
   }
-}
-
-.btn-edit-sucursal {
-  width: 100%;
-  margin-top: 0.75rem;
-  background: rgba(212, 163, 115, 0.15);
-  border-color: rgba(212, 163, 115, 0.35);
-  transition: all 0.3s ease;
-}
-
-.btn-edit-sucursal:hover {
-  background: rgba(212, 163, 115, 0.25);
-  border-color: rgba(212, 163, 115, 0.5);
-  transform: translateY(-2px);
-}
-
-.btn-edit-sucursal.active {
-  background: #d4a373;
-  color: #0a0f1a;
-  border-color: #d4a373;
-  font-weight: 700;
 }
 
 @media (max-width: 768px) {

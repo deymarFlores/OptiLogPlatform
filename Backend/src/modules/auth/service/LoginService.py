@@ -9,27 +9,23 @@ pwd_hasher = PasswordHasher()
 def login(data: LoginSchema):
     try:
         users_collection = db["users"]
-        
-        # Buscar usuario por email
         user = users_collection.find_one({"email": data.email})
-        
         if not user:
             raise HTTPException(status_code=401, detail="Credenciales inválidas")
-        
-        # Verificar contraseña con Argon2
+
         try:
             pwd_hasher.verify(user["password"], data.password)
         except (VerifyMismatchError, InvalidHash):
             raise HTTPException(status_code=401, detail="Credenciales inválidas")
-        
+
         return {
             "message": "Login exitoso",
             "user_id": str(user["_id"]),
             "email": user["email"],
             "name": user["name"],
-            "role": user["role"]
+            "role": user["role"],
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:

@@ -7,17 +7,14 @@ pwd_hasher = PasswordHasher()
 
 def register(data: RegisterSchema):
     try:
-        # Verificar si el usuario ya existe
         users_collection = db["users"]
         existing_user = users_collection.find_one({"email": data.email})
         
         if existing_user:
             raise HTTPException(status_code=400, detail="El usuario ya existe")
         
-        # Hashear contraseña con Argon2
         hashed_password = pwd_hasher.hash(data.password)
         
-        # Crear nuevo usuario
         new_user = {
             "name": data.name,
             "role": data.role,

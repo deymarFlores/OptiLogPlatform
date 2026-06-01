@@ -9,6 +9,7 @@ from src.modules.materials.router.LocationStockRouter import router as location_
 from src.modules.companies.router.Company import router as company_router
 from src.modules.locationsCompany.router.LocationCompany import router as location_company_router
 from src.modules.orders.router.OrderRouter import router as order_router
+from src.modules.routing.router.RoutingRouter import router as routing_router
 
 
 router = APIRouter()
@@ -23,3 +24,4 @@ router.include_router(type_material_router)
 router.include_router(material_router)
 router.include_router(location_stock_router)
 router.include_router(order_router)
+router.include_router(routing_router)

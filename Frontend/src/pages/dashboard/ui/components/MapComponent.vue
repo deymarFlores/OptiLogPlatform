@@ -61,6 +61,7 @@ import { useMapRoutes } from "@/pages/dashboard/composables/useMapRoutes";
 import { typeLocationsAPI } from "@/services/api";
 import { MapContainer, PointRegistrationForm } from "@/Features/map";
 import SucursalRegistrationForm from "./SucursalRegistrationForm.vue";
+import polyline from "@mapbox/polyline";
 
 const props = defineProps({
   isConnectionModeActive: Boolean,
@@ -72,18 +73,24 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  optimizationRoutes: {
+    type: Array,
+    default: () => [],
+  },
 });
 
 const emit = defineEmits([
   "sucursal-added",
   "sucursal-deleted",
   "exit-edit-mode",
+  "clear-routes",
 ]);
 
 const mapContainerRef = ref(null);
 const showModal = ref(false);
 const showSucursalModal = ref(false);
 const modalCoordinates = reactive({ lat: -16.5, lng: -68.15 });
+const optimizationRoutesLayer = ref(null);
 
 const setupStore = useSetupStore();
 const sucursalesManager = useSucursalesManager();
@@ -98,17 +105,15 @@ const drawSucursales = async () => {
     return;
   }
 
+  await nextTick();
+  await new Promise(resolve => setTimeout(resolve, 200));
+
   const sucursales = sucursalesManager.sucursales.value;
-  console.log("📌 Dibujando sucursales:", sucursales.length);
+  console.log("Dibujando sucursales:", sucursales.length);
 
   if (sucursales && sucursales.length > 0) {
     sucursales.forEach((sucursal) => {
-      console.log(
-        "  - Dibujando:",
-        sucursal.name,
-        "tipo:",
-        sucursal.type_location_id,
-      );
+      console.log("  - Dibujando:", sucursal.name, "tipo:", sucursal.type_location_id);
       mapContainerRef.value?.addSucursalMarker(sucursal);
     });
   }
@@ -122,13 +127,12 @@ const drawClientOrders = () => {
   const map = mapContainerRef.value.getMapInstance();
   if (!map) return;
 
-  console.log('📦 Dibujando pedidos de clientes:', props.clientOrders.length);
+  console.log('Dibujando pedidos de clientes:', props.clientOrders.length);
 
   props.clientOrders.forEach(order => {
     const customIcon = L.divIcon({
       html: `
         <div style="position: relative; display: flex; flex-direction: column; align-items: center;">
-          <!-- Etiqueta flotante sobre el icono - COLOR PRINCIPAL DE LA PLATAFORMA -->
           <div style="
             background: #d4a373;
             color: #0a0f1a;
@@ -145,7 +149,6 @@ const drawClientOrders = () => {
             <i class="fas fa-user" style="font-size: 8px; margin-right: 3px;"></i>
             CLIENTE
           </div>
-          <!-- Icono principal -->
           <div style="
             background: linear-gradient(135deg, #fff 0%, #f5e6d3 100%);
             width: 36px;
@@ -181,19 +184,19 @@ const drawClientOrders = () => {
           <strong style="color: #333;">Pedido de Cliente</strong>
         </div>
         <div style="margin-bottom: 5px;">
-          <span style="color: #666;">📦 Producto:</span>
+          <span style="color: #666;">Producto:</span>
           <strong style="color: #333;"> ${order.product_name}</strong>
         </div>
         <div style="margin-bottom: 5px;">
-          <span style="color: #666;">🔢 Cantidad:</span>
+          <span style="color: #666;">Cantidad:</span>
           <strong style="color: #333;"> ${order.quantity} ${order.product_name}</strong>
         </div>
         <div style="margin-bottom: 5px;">
-          <span style="color: #666;">💰 Precio unitario:</span>
+          <span style="color: #666;">Precio unitario:</span>
           <strong style="color: #d4a373;"> ${order.price} Bs</strong>
         </div>
         <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #e0e0e0;">
-          <span style="color: #666;">💵 Total:</span>
+          <span style="color: #666;">Total:</span>
           <strong style="color: #d4a373; font-size: 14px;"> ${order.total_amount} Bs</strong>
         </div>
         <div style="font-size: 11px; color: #999; display: flex; align-items: center; gap: 4px;">
@@ -209,7 +212,6 @@ const drawClientOrders = () => {
       className: 'client-popup'
     });
 
-    // Efecto hover
     clientMarker.on('mouseover', function() {
       const icon = this._icon?.querySelector('div:last-child');
       if (icon) {
@@ -227,6 +229,140 @@ const drawClientOrders = () => {
   });
 };
 
+const drawOptimizationRoutes = (routes) => {
+  if (!mapContainerRef.value || !routes || routes.length === 0) {
+    return;
+  }
+
+  const map = mapContainerRef.value.getMapInstance();
+  if (!map) {
+    console.warn('Mapa no inicializado');
+    return;
+  }
+
+  if (optimizationRoutesLayer.value) {
+    optimizationRoutesLayer.value.eachLayer((layer) => {
+      map.removeLayer(layer);
+    });
+    optimizationRoutesLayer.value = null;
+  }
+
+  const routeColors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD'];
+
+  routes.forEach((route, index) => {
+    if (route.geometry) {
+      try {
+        const decodedPoints = polyline.decode(route.geometry);
+        const latLngPoints = decodedPoints.map(point => [point[0], point[1]]);
+
+        const routeLayer = L.polyline(latLngPoints, {
+          color: routeColors[index % routeColors.length],
+          weight: 4,
+          opacity: 0.8,
+          dashArray: '10, 10'
+        }).addTo(map);
+
+        routeLayer.bindPopup(`
+          <div style="min-width: 200px;">
+            <strong>Ruta ${index + 1}</strong><br/>
+            <strong>Origen:</strong> ${route.supplier_name}<br/>
+            <strong>Destino:</strong> ${route.customer_name}<br/>
+            <strong>Distancia:</strong> ${route.distance_km.toFixed(2)} km<br/>
+            <strong>Cantidad:</strong> ${route.quantity} und<br/>
+            <strong>Costo:</strong> ${route.cost.toFixed(2)} Bs
+          </div>
+        `);
+
+        if (!optimizationRoutesLayer.value) {
+          optimizationRoutesLayer.value = L.layerGroup().addTo(map);
+        }
+        optimizationRoutesLayer.value.addLayer(routeLayer);
+
+      } catch (error) {
+        console.error('Error decodificando polyline:', error);
+      }
+    } else {
+      const supplier = route.supplier_data || route.supplier;
+      const customer = route.customer_data || route.customer;
+
+      if (supplier && customer && supplier.lat && customer.lat) {
+        const routeLayer = L.polyline([
+          [supplier.lat, supplier.lng],
+          [customer.lat, customer.lng]
+        ], {
+          color: routeColors[index % routeColors.length],
+          weight: 3,
+          opacity: 0.7,
+          dashArray: '5, 10'
+        }).addTo(map);
+
+        routeLayer.bindPopup(`
+          <div style="min-width: 200px;">
+            <strong>Ruta ${index + 1}</strong><br/>
+            <strong>Origen:</strong> ${supplier.name}<br/>
+            <strong>Destino:</strong> ${customer.name}<br/>
+            <strong>Cantidad:</strong> ${route.quantity} und<br/>
+            <strong>Costo:</strong> ${route.cost.toFixed(2)} Bs
+          </div>
+        `);
+
+        if (!optimizationRoutesLayer.value) {
+          optimizationRoutesLayer.value = L.layerGroup().addTo(map);
+        }
+        optimizationRoutesLayer.value.addLayer(routeLayer);
+      }
+    }
+  });
+
+  if (routes.length > 0 && optimizationRoutesLayer.value) {
+    const bounds = [];
+    routes.forEach(route => {
+      if (route.geometry) {
+        try {
+          const decodedPoints = polyline.decode(route.geometry);
+          decodedPoints.forEach(point => {
+            bounds.push([point[0], point[1]]);
+          });
+        } catch (error) {
+          console.error('Error obteniendo bounds:', error);
+        }
+      } else if (route.supplier_data && route.customer_data) {
+        bounds.push([route.supplier_data.lat, route.supplier_data.lng]);
+        bounds.push([route.customer_data.lat, route.customer_data.lng]);
+      }
+    });
+    if (bounds.length > 0) {
+      map.fitBounds(bounds, { padding: [50, 50] });
+    }
+  }
+};
+
+const clearOptimizationRoutes = () => {
+  if (optimizationRoutesLayer.value && mapContainerRef.value) {
+    const map = mapContainerRef.value.getMapInstance();
+    if (map) {
+      optimizationRoutesLayer.value.eachLayer((layer) => {
+        map.removeLayer(layer);
+      });
+    }
+    optimizationRoutesLayer.value = null;
+  }
+};
+
+watch(
+  () => props.optimizationRoutes,
+  (newRoutes) => {
+    if (newRoutes && newRoutes.length > 0) {
+      setTimeout(() => {
+        drawOptimizationRoutes(newRoutes);
+      }, 500);
+    } else {
+      clearOptimizationRoutes();
+    }
+  },
+  { deep: true, immediate: true }
+);
+
 watch(
   locationTypes,
   (newTypes) => {
@@ -235,7 +371,6 @@ watch(
       newTypes.length > 0 &&
       sucursalesManager.sucursales.value.length > 0
     ) {
-      console.log("📍 locationTypes disponibles, dibujando sucursales...");
       nextTick(() => {
         drawSucursales();
       });
@@ -247,7 +382,6 @@ watch(
 watch(
   () => sucursalesManager.sucursales.value,
   (newSucursales) => {
-    console.log("🔄 Sucursales cargadas:", newSucursales.length);
     if (
       newSucursales &&
       newSucursales.length > 0 &&
@@ -264,7 +398,6 @@ watch(
 watch(
   () => props.clientOrders,
   (newOrders) => {
-    console.log("🔄 Pedidos de clientes cargados:", newOrders.length);
     if (newOrders && newOrders.length > 0) {
       nextTick(() => {
         drawClientOrders();
@@ -275,7 +408,7 @@ watch(
 );
 
 onMounted(async () => {
-  console.log("📍 MapComponent mounted");
+  console.log("MapComponent mounted");
 
   if (
     setupStore.pointTypes.value.length === 0 &&
@@ -289,16 +422,11 @@ onMounted(async () => {
         setupStore.setPointTypes(result.data);
       }
     } catch (error) {
-      console.error("Error al cargar tipos de ubicación:", error);
+      console.error("Error al cargar tipos de ubicacion:", error);
     }
   }
 
   await sucursalesManager.loadSucursales();
-
-  console.log(
-    "📋 Sucursales cargadas:",
-    sucursalesManager.sucursales.value.length,
-  );
 
   setTimeout(() => {
     if (locationTypes.value.length > 0) {
@@ -308,6 +436,9 @@ onMounted(async () => {
       drawClientOrders();
     }
     drawAllRoutes();
+    if (props.optimizationRoutes && props.optimizationRoutes.length > 0) {
+      drawOptimizationRoutes(props.optimizationRoutes);
+    }
   }, 500);
 });
 
@@ -364,7 +495,7 @@ const handleRouteCreated = (data) => {
 };
 
 const handleRouteStarted = (data) => {
-  console.log("Conexión iniciada:", data);
+  console.log("Conexion iniciada:", data);
 };
 
 const drawAllRoutes = () => {
@@ -388,7 +519,7 @@ const openModal = (lat = -16.5, lng = -68.15) => {
 };
 
 const activateConnectionMode = () => {
-  console.log("Modo de conexión activado");
+  console.log("Modo de conexion activado");
 };
 
 const deactivateConnectionMode = () => {
@@ -405,6 +536,8 @@ defineExpose({
   openModal,
   activateConnectionMode,
   deactivateConnectionMode,
+  drawOptimizationRoutes,
+  clearOptimizationRoutes,
 });
 </script>
 

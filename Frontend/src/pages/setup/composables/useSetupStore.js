@@ -1,4 +1,5 @@
 import { ref } from "vue";
+import { typeMaterialsAPI } from "@/services/api";
 
 const initializeFromSessionStorage = () => {
   try {
@@ -71,6 +72,25 @@ export function useSetupStore() {
     saveToSessionStorage();
   };
 
+  const loadProducts = async () => {
+    try {
+      console.log("📡 Cargando tipos de materiales...");
+      const result = await typeMaterialsAPI.getAll();
+      if (result.success && result.data) {
+        products.value = result.data;
+        saveToSessionStorage();
+        console.log("✅ Tipos de materiales cargados:", products.value.length);
+        return products.value;
+      } else {
+        console.error("Error al cargar tipos de materiales:", result.error);
+        return [];
+      }
+    } catch (error) {
+      console.error("Error en loadProducts:", error);
+      return [];
+    }
+  };
+
   const getSetupData = () => ({
     userId: userId.value,
     company: company.value,
@@ -114,6 +134,7 @@ export function useSetupStore() {
     setCompany,
     setPointTypes,
     setProducts,
+    loadProducts,
     getSetupData,
     resetSetup,
     resetSetupData,
