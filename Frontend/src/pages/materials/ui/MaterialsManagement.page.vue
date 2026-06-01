@@ -1,5 +1,18 @@
 <template>
   <div class="materials-management">
+    <!-- Toast Notifications -->
+    <div class="toast-container">
+      <div
+        v-for="toast in toasts"
+        :key="toast.id"
+        class="toast"
+        :class="toast.type"
+      >
+        <i :class="toast.icon"></i>
+        <span>{{ toast.message }}</span>
+      </div>
+    </div>
+
     <!-- Header -->
     <div class="management-header">
       <div class="header-left">
@@ -15,7 +28,7 @@
       <div class="header-stats">
         <div class="stat-card">
           <span class="stat-label">Puntos Configurados</span>
-          <strong class="stat-value">{{ points.length }}</strong>
+          <strong class="stat-value">{{ sucursales.length }}</strong>
         </div>
         <div class="stat-card">
           <span class="stat-label">Total de Productos</span>
@@ -35,7 +48,7 @@
         <div class="list-header">
           <h2>Puntos Logísticos</h2>
           <div class="list-controls">
-            <input 
+            <input
               v-model="searchPoint"
               type="text"
               placeholder="Buscar punto..."
@@ -50,20 +63,22 @@
         </div>
 
         <div class="points-grid">
-          <div 
+          <div
             v-for="point in filteredPoints"
             :key="point.id"
             class="point-card"
-            :class="{ 'active': activePointId === point.id }"
+            :class="{ active: activePointId === point.id }"
             @click="selectPoint(point.id)"
           >
             <div class="card-icon">
-              <i :class="`fas ${point.icon}`"></i>
+              <i :class="`fas ${getTypeIcon(point.type_location_id)}`"></i>
             </div>
             <div class="card-content">
               <h3>{{ point.name }}</h3>
-              <p class="card-type">{{ point.typeName }}</p>
-              <p class="card-coords">{{ point.lat.toFixed(4) }}, {{ point.lng.toFixed(4) }}</p>
+              <p class="card-type">{{ getTypeName(point.type_location_id) }}</p>
+              <p class="card-coords">
+                {{ point.lat.toFixed(4) }}, {{ point.lng.toFixed(4) }}
+              </p>
             </div>
             <div class="card-badge">
               <span v-if="getMaterialsSummary(point.id)" class="badge-count">
@@ -75,7 +90,7 @@
 
           <div v-if="filteredPoints.length === 0" class="empty-state">
             <i class="fas fa-inbox"></i>
-            <p>No hay puntos que coincidan con tu búsqueda</p>
+            <p>No hay sucursales registradas</p>
           </div>
         </div>
       </div>
@@ -86,99 +101,130 @@
           <!-- Editor Header -->
           <div class="editor-header">
             <div class="selected-point-info">
-              <i :class="`fas ${selectedPoint.icon}`"></i>
+              <i
+                :class="`fas ${getTypeIcon(selectedPoint.type_location_id)}`"
+              ></i>
               <div>
                 <h3>{{ selectedPoint.name }}</h3>
-                <p>{{ selectedPoint.typeName }}</p>
+                <p>{{ getTypeName(selectedPoint.type_location_id) }}</p>
               </div>
             </div>
           </div>
 
           <!-- Contenido scrolleable -->
           <div class="editor-content-scroll">
-          <!-- Formulario de Producto -->
-          <form @submit.prevent="addMaterial" class="add-material-form">
-            <h4>Agregar Producto</h4>
-            <div class="form-grid">
-              <div class="form-group">
-                <label for="productSelect">Producto</label>
-                <select 
-                  v-model="formData.productId"
-                  id="productSelect"
-                  required
-                  class="product-select"
-                >
-                  <option value="">Seleccionar producto...</option>
-                  <option v-for="product in products" :key="product.id" :value="product.id">
-                    {{ product.name }} ({{ product.price }} Bs/{{ product.unit }})
-                  </option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="quantity">Cantidad Disponible</label>
-                <div class="quantity-input-group">
-                  <input 
-                    v-model.number="formData.quantity"
-                    id="quantity"
-                    type="number"
-                    step="0.1"
-                    placeholder="0.0"
+            <!-- Formulario de Producto -->
+            <form @submit.prevent="addMaterial" class="add-material-form">
+              <h4>Agregar Producto</h4>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="productSelect">Producto</label>
+                  <select
+                    v-model="formData.productId"
+                    id="productSelect"
                     required
-                  />
-                  <span v-if="selectedProduct" class="unit-badge">{{ selectedProduct.unit }}</span>
+                    class="product-select"
+                  >
+                    <option value="">Seleccionar producto...</option>
+                    <option
+                      v-for="product in products"
+                      :key="product.id"
+                      :value="product.id"
+                    >
+                      {{ product.name }} ({{ product.price }} Bs/{{
+                        product.unit
+                      }})
+                    </option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="quantity">Cantidad Disponible</label>
+                  <div class="quantity-input-group">
+                    <input
+                      v-model.number="formData.quantity"
+                      id="quantity"
+                      type="number"
+                      step="0.1"
+                      placeholder="0.0"
+                      required
+                    />
+                    <span v-if="selectedProduct" class="unit-badge">{{
+                      selectedProduct.unit
+                    }}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-            <button type="submit" class="btn-submit">
-              <i class="fas fa-plus"></i> Agregar Producto
-            </button>
-          </form>
+              <button type="submit" class="btn-submit" :disabled="isSubmitting">
+                <i class="fas fa-plus"></i>
+                {{ isSubmitting ? "Agregando..." : "Agregar Producto" }}
+              </button>
+            </form>
 
-          <!-- Tabla de Materiales -->
-          <div v-if="getActiveMaterialsSummary()" class="materials-table-section">
-            <h4>Productos Registrados</h4>
-            <div class="table-responsive">
-              <table class="materials-table">
-                <thead>
-                  <tr>
-                    <th>Producto</th>
-                    <th class="text-right">Cantidad</th>
-                    <th class="text-right">Precio (Bs/unidad)</th>
-                    <th class="text-right">Subtotal (Bs)</th>
-                    <th class="text-center">Acción</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="material in getActiveMaterialsSummary().materials" :key="material.id">
-                    <td class="product-name">
-                      <i class="fas fa-package"></i>
-                      {{ material.type }}
-                    </td>
-                    <td class="text-right">{{ parseFloat(material.quantity).toFixed(2) }}</td>
-                    <td class="text-right">{{ parseFloat(material.price).toFixed(2) }}</td>
-                    <td class="text-right subtotal">
-                      {{ (parseFloat(material.quantity) * parseFloat(material.price)).toFixed(2) }}
-                    </td>
-                    <td class="text-center">
-                      <button 
-                        @click="deleteMaterial(material.id)"
-                        class="btn-action-delete"
-                        title="Eliminar"
-                      >
-                        <i class="fas fa-trash-alt"></i>
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+            <!-- Tabla de Materiales -->
+            <div
+              v-if="getActiveMaterialsSummary()"
+              class="materials-table-section"
+            >
+              <h4>Productos Registrados</h4>
+              <div class="table-responsive">
+                <table class="materials-table">
+                  <thead>
+                    <tr>
+                      <th>Producto</th>
+                      <th class="text-right">Cantidad</th>
+                      <th class="text-right">Unidad</th>
+                      <th class="text-right">Precio (Bs/unidad)</th>
+                      <th class="text-right">Subtotal (Bs)</th>
+                      <th class="text-center">Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      v-for="material in getActiveMaterialsSummary().materials"
+                      :key="material.id"
+                    >
+                      <td class="product-name">
+                        <i class="fas fa-package"></i>
+                        {{ material.material_name }}
+                      </td>
+                      <td class="text-right">
+                        {{ parseFloat(material.stock).toFixed(2) }}
+                      </td>
+                      <td class="text-right">{{ material.units }}</td>
+                      <td class="text-right">
+                        {{ parseFloat(material.price).toFixed(2) }}
+                      </td>
+                      <td class="text-right subtotal">
+                        {{
+                          (
+                            parseFloat(material.stock) *
+                            parseFloat(material.price)
+                          ).toFixed(2)
+                        }}
+                      </td>
+                      <td class="text-center">
+                        <button
+                          @click="deleteMaterial(material.id)"
+                          class="btn-action-delete"
+                          title="Eliminar"
+                          :disabled="isDeleting"
+                        >
+                          <i class="fas fa-trash-alt"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
 
-          <div v-else class="empty-materials">
-            <i class="fas fa-inbox"></i>
-            <p>No hay productos registrados para este punto</p>
-            <p class="hint">Agrega tu primer producto usando el formulario de arriba</p>
-          </div>
+            <div v-else class="empty-materials">
+              <i class="fas fa-inbox"></i>
+              <p>No hay productos registrados para este punto</p>
+              <p class="hint">
+                Agrega tu primer producto usando el formulario de arriba
+              </p>
+            </div>
           </div>
         </div>
 
@@ -202,123 +248,276 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import { useMapPoints } from '@/pages/dashboard/composables/useMapPoints';
-import { useMaterialsConfig } from '@/pages/dashboard/composables/useMaterialsConfig';
-import { useSetupStore } from '@/pages/setup/composables/useSetupStore';
+import { ref, computed, onMounted } from "vue";
+import { useSucursalesManager } from "@/pages/dashboard/composables/useSucursalesManager";
+import { useSetupStore } from "@/pages/setup/composables/useSetupStore";
+import { locationStockAPI, typeMaterialsAPI } from "@/services/api";
 
-const mapPoints = useMapPoints();
-const materialsConfig = useMaterialsConfig();
+const sucursalesManager = useSucursalesManager();
 const setupStore = useSetupStore();
 
+const toasts = ref([]);
+let nextToastId = 0;
+
+const showToast = (message, type = "success") => {
+  const id = nextToastId++;
+  const iconMap = {
+    success: "fas fa-check-circle",
+    error: "fas fa-exclamation-circle",
+    warning: "fas fa-exclamation-triangle",
+    info: "fas fa-info-circle",
+  };
+
+  toasts.value.push({
+    id,
+    message,
+    type,
+    icon: iconMap[type] || iconMap.success,
+  });
+
+  setTimeout(() => {
+    toasts.value = toasts.value.filter((t) => t.id !== id);
+  }, 3000);
+};
+
 const activePointId = ref(null);
-const searchPoint = ref('');
-const filterType = ref('');
+const searchPoint = ref("");
+const filterType = ref("");
 const formData = ref({
-  productId: '',
-  quantity: ''
+  productId: "",
+  quantity: "",
 });
+const locationStocks = ref({});
+const isLoading = ref(false);
+const isSubmitting = ref(false);
+const isDeleting = ref(false);
 
-// Obtener productos configurados
-const products = computed(() => setupStore.products || []);
+const products = computed(() => setupStore.products.value || []);
 
-const points = computed(() => mapPoints.allPoints.value);
+const sucursales = computed(() => sucursalesManager.sucursales.value || []);
 
 const filteredPoints = computed(() => {
-  return points.value.filter(point => {
-    const matchesSearch = point.name.toLowerCase().includes(searchPoint.value.toLowerCase());
-    const matchesType = !filterType.value || point.typeName === filterType.value;
+  return sucursales.value.filter((point) => {
+    const matchesSearch = point.name
+      .toLowerCase()
+      .includes(searchPoint.value.toLowerCase());
+    const matchesType =
+      !filterType.value || point.type_location_id === filterType.value;
     return matchesSearch && matchesType;
   });
 });
 
 const selectedPoint = computed(() => {
   if (!activePointId.value) return null;
-  return points.value.find(p => p.id === activePointId.value);
+  return sucursales.value.find((p) => p.id === activePointId.value);
 });
 
-// Obtener el producto seleccionado
 const selectedProduct = computed(() => {
   if (!formData.value.productId) return null;
-  return products.value.find(p => p.id === parseInt(formData.value.productId));
+  return products.value.find((p) => p.id === formData.value.productId);
 });
 
 const totalMaterials = computed(() => {
   let count = 0;
-  for (let pointId in materialsConfig.getAllMaterials.value) {
-    count += (materialsConfig.getAllMaterials.value[pointId] || []).length;
+  for (let locationId in locationStocks.value) {
+    count += (locationStocks.value[locationId] || []).length;
   }
   return count;
 });
 
 const totalValue = computed(() => {
   let total = 0;
-  for (let pointId in materialsConfig.getAllMaterials.value) {
-    const summary = materialsConfig.getMaterialsSummary(parseInt(pointId));
-    if (summary) total += summary.totalValue;
+  for (let locationId in locationStocks.value) {
+    const stocks = locationStocks.value[locationId] || [];
+    stocks.forEach((stock) => {
+      total += (parseFloat(stock.price) || 0) * (parseFloat(stock.stock) || 0);
+    });
   }
   return total;
 });
 
-const getMaterialsSummary = (pointId) => {
-  return materialsConfig.getMaterialsSummary(pointId);
+const getMaterialsSummary = (locationId) => {
+  const stocks = locationStocks.value[locationId] || [];
+  if (stocks.length === 0) return null;
+
+  const totalValue = stocks.reduce(
+    (sum, stock) =>
+      sum + (parseFloat(stock.price) || 0) * (parseFloat(stock.stock) || 0),
+    0,
+  );
+  return {
+    count: stocks.length,
+    totalValue: totalValue,
+    materials: stocks,
+  };
+};
+
+const getTypeIcon = (typeId) => {
+  const type = setupStore.pointTypes.value?.find((t) => t.id === typeId);
+  return type?.icon ? `${type.icon}` : "fa-warehouse";
+};
+
+const getTypeName = (typeId) => {
+  const type = setupStore.pointTypes.value?.find((t) => t.id === typeId);
+  return type?.name || "Sucursal";
 };
 
 const getActiveMaterialsSummary = () => {
   if (!activePointId.value) return null;
-  return materialsConfig.getMaterialsSummary(activePointId.value);
+  return getMaterialsSummary(activePointId.value);
 };
 
-const selectPoint = (pointId) => {
+const selectPoint = async (pointId) => {
   activePointId.value = pointId;
   resetForm();
+  await loadLocationStocks(pointId);
 };
 
 const resetForm = () => {
   formData.value = {
-    productId: '',
-    quantity: ''
+    productId: "",
+    quantity: "",
   };
 };
 
-const addMaterial = () => {
-  if (!formData.value.productId || !formData.value.quantity) {
-    alert('Por favor selecciona un producto y completa la cantidad');
-    return;
-  }
-
-  if (activePointId.value && selectedProduct.value) {
-    materialsConfig.addMaterial(activePointId.value, {
-      type: selectedProduct.value.name,
-      unit: selectedProduct.value.unit,
-      quantity: formData.value.quantity,
-      price: selectedProduct.value.price,
-      productId: selectedProduct.value.id
-    });
-    resetForm();
+const loadLocationStocks = async (locationId) => {
+  try {
+    const result = await locationStockAPI.getByLocation(locationId);
+    if (result.success) {
+      locationStocks.value[locationId] = result.data || [];
+    } else {
+      locationStocks.value[locationId] = [];
+      showToast(
+        "Error al cargar los productos: " +
+          (result.error || "Error desconocido"),
+        "error",
+      );
+    }
+  } catch (error) {
+    console.error("Error en loadLocationStocks:", error);
+    locationStocks.value[locationId] = [];
+    showToast("Error de conexión al cargar productos", "error");
   }
 };
 
-const deleteMaterial = (materialId) => {
-  if (confirm('¿Estás seguro de eliminar este producto?')) {
-    materialsConfig.removeMaterial(activePointId.value, materialId);
+const loadTypeMaterials = async () => {
+  try {
+    isLoading.value = true;
+
+    if (setupStore.products.value && setupStore.products.value.length > 0) {
+      return setupStore.products.value;
+    }
+
+    const result = await typeMaterialsAPI.getAll();
+    if (result.success && result.data) {
+      setupStore.setProducts(result.data);
+      showToast(
+        ` ${result.data.length} productos cargados correctamente`,
+        "success",
+      );
+      return result.data;
+    } else {
+      showToast("Error al cargar tipos de materiales", "error");
+      return [];
+    }
+  } catch (error) {
+    console.error("Error en loadTypeMaterials:", error);
+    showToast("Error de conexión al cargar productos", "error");
+    return [];
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const addMaterial = async () => {
+  if (!formData.value.productId || !formData.value.quantity) {
+    showToast(
+      "Por favor selecciona un producto y completa la cantidad",
+      "warning",
+    );
+    return;
+  }
+
+  if (!activePointId.value || !selectedProduct.value) {
+    showToast("Selecciona una sucursal primero", "warning");
+    return;
+  }
+
+  const quantity = parseFloat(formData.value.quantity);
+  if (isNaN(quantity) || quantity <= 0) {
+    showToast("Por favor ingresa una cantidad válida mayor a 0", "warning");
+    return;
+  }
+
+  isSubmitting.value = true;
+  try {
+    const result = await locationStockAPI.create({
+      location_id: activePointId.value,
+      type_material_id: formData.value.productId,
+      stock: quantity,
+    });
+
+    if (result.success) {
+      await loadLocationStocks(activePointId.value);
+      resetForm();
+      showToast("✅ Producto agregado correctamente", "success");
+    } else {
+      showToast(
+        "Error: " + (result.error || "No se pudo agregar el producto"),
+        "error",
+      );
+    }
+  } catch (error) {
+    console.error("Error al agregar material:", error);
+    showToast("Error de conexión al agregar producto", "error");
+  } finally {
+    isSubmitting.value = false;
+  }
+};
+
+const deleteMaterial = async (stockId) => {
+  isDeleting.value = true;
+  try {
+    const result = await locationStockAPI.delete(stockId);
+    if (result.success) {
+      if (activePointId.value) {
+        await loadLocationStocks(activePointId.value);
+      }
+      showToast("✅ Producto eliminado correctamente", "success");
+    } else {
+      showToast(
+        "Error: " + (result.error || "No se pudo eliminar el producto"),
+        "error",
+      );
+    }
+  } catch (error) {
+    console.error("Error al eliminar material:", error);
+    showToast("Error de conexión al eliminar producto", "error");
+  } finally {
+    isDeleting.value = false;
   }
 };
 
 const handleBackToMap = () => {
-  emit('back-to-map');
+  emit("back-to-map");
 };
 
 const handleContinue = () => {
-  emit('continue');
+  emit("continue");
 };
 
-const emit = defineEmits(['back-to-map', 'continue']);
+const emit = defineEmits(["back-to-map", "continue"]);
 
-// Seleccionar el primer punto por defecto
-if (points.value.length > 0 && !activePointId.value) {
-  activePointId.value = points.value[0].id;
-}
+onMounted(async () => {
+  await loadTypeMaterials();
+  await sucursalesManager.loadSucursales();
+
+  if (sucursales.value.length > 0) {
+    await selectPoint(sucursales.value[0].id);
+  } else {
+    showToast("No hay sucursales disponibles", "warning");
+  }
+});
 </script>
 
 <style scoped>
@@ -328,6 +527,66 @@ if (points.value.length > 0 && !activePointId.value) {
   height: 100vh;
   background: #0a0f1a;
   color: #e8edf2;
+}
+
+/* Toast Notifications */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  animation: slideIn 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  min-width: 280px;
+}
+
+.toast i {
+  font-size: 18px;
+}
+
+.toast.success {
+  background: linear-gradient(135deg, #10b981, #059669);
+  border-left: 4px solid #34d399;
+}
+
+.toast.error {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border-left: 4px solid #f87171;
+}
+
+.toast.warning {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border-left: 4px solid #fbbf24;
+}
+
+.toast.info {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border-left: 4px solid #60a5fa;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 /* Header */
@@ -639,8 +898,6 @@ if (points.value.length > 0 && !activePointId.value) {
   gap: 1rem;
 }
 
-
-
 .no-selection,
 .empty-materials {
   flex: 1;
@@ -774,9 +1031,14 @@ if (points.value.length > 0 && !activePointId.value) {
   font-size: 0.8rem;
 }
 
-.btn-submit:hover {
+.btn-submit:hover:not(:disabled) {
   background: rgba(212, 163, 115, 0.4);
   border-color: #d4a373;
+}
+
+.btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .materials-table-section {
@@ -870,10 +1132,15 @@ if (points.value.length > 0 && !activePointId.value) {
   transition: all 0.3s ease;
 }
 
-.btn-action-delete:hover {
+.btn-action-delete:hover:not(:disabled) {
   background: rgba(239, 68, 68, 0.3);
   border-color: rgba(239, 68, 68, 0.6);
   color: #f87171;
+}
+
+.btn-action-delete:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Footer */
@@ -961,10 +1228,6 @@ if (points.value.length > 0 && !activePointId.value) {
   .header-stats {
     width: 100%;
     justify-content: space-between;
-  }
-
-  .materials-summary {
-    grid-template-columns: 1fr;
   }
 
   .form-grid {

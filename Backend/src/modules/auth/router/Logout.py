@@ -2,7 +2,7 @@ from fastapi import APIRouter
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-@router.post("/logout")
+@router.post("/api/logout")
 async def logout():
     return {
         "success": True,

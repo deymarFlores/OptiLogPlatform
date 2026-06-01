@@ -160,13 +160,18 @@ const addMarker = (point) => {
 };
 
 const addSucursalMarker = (sucursal) => {
-  console.log("📍 addSucursalMarker llamado con:", sucursal);
-  console.log("📍 type_location_id buscando:", sucursal.type_location_id);
-  console.log("📍 locationTypes disponibles:", props.locationTypes);
+  if (!map || !markersLayer) {
+    console.warn(" Mapa no inicializado aún. Sucursal en queue:", sucursal.name);
+    return;
+  }
+
+  console.log(" addSucursalMarker llamado con:", sucursal);
+  console.log(" type_location_id buscando:", sucursal.type_location_id);
+  console.log(" locationTypes disponibles:", props.locationTypes);
 
   if (props.locationTypes && props.locationTypes.length > 0) {
     console.log(
-      "📍 IDs disponibles en locationTypes:",
+      " IDs disponibles en locationTypes:",
       props.locationTypes.map((t) => t.id),
     );
   }
@@ -175,7 +180,7 @@ const addSucursalMarker = (sucursal) => {
     (t) => t.id === sucursal.type_location_id,
   );
 
-  console.log("📍 locationType encontrado:", locationType);
+  console.log(" locationType encontrado:", locationType);
 
   if (!locationType) {
     console.warn("Tipo de ubicación no encontrado:", sucursal.type_location_id);
@@ -242,7 +247,7 @@ const addSucursalMarker = (sucursal) => {
         <span style="color: #333; font-size: 11px; font-weight: 500;"> ${locationType.name}</span>
       </div>
       <div>
-        <span style="color: #666; font-size: 11px;">📍 Ubicación:</span>
+        <span style="color: #666; font-size: 11px;"> Ubicación:</span>
         <span style="color: #999; font-size: 10px;"> ${sucursal.lat.toFixed(4)}, ${sucursal.lng.toFixed(4)}</span>
       </div>
     </div>

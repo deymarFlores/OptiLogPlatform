@@ -19,7 +19,6 @@ class OrderService:
             pass
 
     def create(self, data: OrderSchema):
-        """Crear una nueva orden/pedido"""
         try:
             order = {
                 "user_id": ObjectId(data.user_id),
@@ -57,7 +56,6 @@ class OrderService:
             raise HTTPException(status_code=500, detail=f"Error al crear orden: {str(e)}")
 
     def get_by_user(self, user_id: str):
-        """Obtener todas las órdenes de un usuario"""
         try:
             orders = self.collection.find(
                 {"user_id": ObjectId(user_id)},
@@ -89,7 +87,6 @@ class OrderService:
             raise HTTPException(status_code=500, detail=f"Error al obtener órdenes: {str(e)}")
 
     def get_by_company(self, company_id: str):
-        """Obtener todas las órdenes de una empresa"""
         try:
             orders = self.collection.find(
                 {"company_id": ObjectId(company_id)},
@@ -121,7 +118,6 @@ class OrderService:
             raise HTTPException(status_code=500, detail=f"Error al obtener órdenes: {str(e)}")
 
     def get_by_id(self, order_id: str):
-        """Obtener una orden por ID"""
         try:
             order = self.collection.find_one({"_id": ObjectId(order_id)})
             

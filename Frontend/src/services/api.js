@@ -2,7 +2,7 @@ import axios from "axios";
 import { API_ENDPOINTS } from "@/conf/env";
 
 const axiosInstance = axios.create({
-  timeout: 10000,
+  timeout: 120000,
   headers: {
     "Content-Type": "application/json",
   },
@@ -380,6 +380,85 @@ export const typeMaterialsAPI = {
   },
 };
 
+export const productsAPI = {
+  getByCompany: async (companyId) => {
+    try {
+      const response = await axiosInstance.get(
+        `${API_ENDPOINTS.typeMaterials}/company/${companyId}`
+      );
+      return response.data;
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.detail ||
+        error.message ||
+        "Error al obtener productos";
+      return { success: false, error: errorMessage };
+    }
+  },
+
+  getById: async (productId) => {
+    try {
+      const response = await axiosInstance.get(
+        `${API_ENDPOINTS.typeMaterials}/${productId}`
+      );
+      return response.data;
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.detail ||
+        error.message ||
+        "Error al obtener producto";
+      return { success: false, error: errorMessage };
+    }
+  },
+
+  create: async (companyId, data) => {
+    try {
+      const response = await axiosInstance.post(
+        `${API_ENDPOINTS.typeMaterials}/?company_id=${companyId}`,
+        data
+      );
+      return { success: true, data: response.data };
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.detail ||
+        error.message ||
+        "Error al crear producto";
+      return { success: false, error: errorMessage };
+    }
+  },
+
+  update: async (productId, data) => {
+    try {
+      const response = await axiosInstance.put(
+        `${API_ENDPOINTS.typeMaterials}/${productId}`,
+        data
+      );
+      return { success: true, data: response.data };
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.detail ||
+        error.message ||
+        "Error al actualizar producto";
+      return { success: false, error: errorMessage };
+    }
+  },
+
+  delete: async (productId) => {
+    try {
+      const response = await axiosInstance.delete(
+        `${API_ENDPOINTS.typeMaterials}/${productId}`
+      );
+      return { success: true, data: response.data };
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.detail ||
+        error.message ||
+        "Error al eliminar producto";
+      return { success: false, error: errorMessage };
+    }
+  }
+};
+
 export const ordersAPI = {
   create: async (data) => {
     try {
@@ -445,6 +524,136 @@ export const ordersAPI = {
       return { success: false, error: errorMessage };
     }
   },
+};
+
+export const routingAPI = {
+  optimizeFromCompany: async (companyId, costPerKm = 5.5, productId = null) => {
+    try {
+      const params = {
+        company_id: companyId,
+        cost_per_km: costPerKm
+      };
+      
+      if (productId) {
+        params.product_id = productId;
+      }
+      
+      const response = await axiosInstance.post(
+        `${API_ENDPOINTS.api}routing/optimize/from-company`,
+        {},
+        {
+          params
+        }
+      );
+      return response.data;
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.detail ||
+        error.message ||
+        "Error al optimizar rutas";
+      return { success: false, error: errorMessage };
+    }
+  },
+
+  getMatrixAnalysis: async (companyId, costPerKm = 5.5) => {
+    try {
+      const response = await axiosInstance.get(
+        `${API_ENDPOINTS.api}routing/matrix-analysis/${companyId}`,
+        {
+          params: {
+            cost_per_km: costPerKm
+          }
+        }
+      );
+      return response.data;
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.detail ||
+        error.message ||
+        "Error al obtener análisis de matriz";
+      return { success: false, error: errorMessage };
+    }
+  },
+
+  optimize: async (optimizationData) => {
+    try {
+      const response = await axiosInstance.post(
+        `${API_ENDPOINTS.api}routing/optimize`,
+        optimizationData
+      );
+      return response.data;
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.detail ||
+        error.message ||
+        "Error en optimización";
+      return { success: false, error: errorMessage };
+    }
+  }
+};
+
+export const locationStockAPI = {
+  create: async (data) => {
+    try {
+      const response = await axiosInstance.post(
+        `${API_ENDPOINTS.api}location-stocks`,
+        data
+      );
+      return { success: true, data: response.data };
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.detail ||
+        error.message ||
+        "Error al crear stock";
+      return { success: false, error: errorMessage };
+    }
+  },
+
+  getByLocation: async (locationId) => {
+    try {
+      const response = await axiosInstance.get(
+        `${API_ENDPOINTS.api}location-stocks/location/${locationId}`
+      );
+      return { success: true, data: response.data };
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.detail ||
+        error.message ||
+        "Error al obtener stocks";
+      return { success: false, error: errorMessage };
+    }
+  },
+
+  update: async (stockId, data) => {
+    try {
+      const response = await axiosInstance.put(
+        `${API_ENDPOINTS.api}location-stocks/${stockId}`,
+        data
+      );
+      return { success: true, data: response.data };
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.detail ||
+        error.message ||
+        "Error al actualizar stock";
+      return { success: false, error: errorMessage };
+    }
+  },
+
+  delete: async (stockId) => {
+    try {
+      const response = await axiosInstance.delete(
+        `${API_ENDPOINTS.api}location-stocks/${stockId}`
+      );
+      return { success: true, data: response.data };
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.detail ||
+        error.message ||
+        "Error al eliminar stock";
+      return { success: false, error: errorMessage };
+    }
+  }
 };
 
 export default axiosInstance;

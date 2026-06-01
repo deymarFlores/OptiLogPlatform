@@ -8,27 +8,39 @@
         @add-point="handleAddPoint"
         @show-materials="handleShowMaterials"
         @show-routes="handleShowRoutes"
+        @show-optimization="handleShowOptimization"
         @toggle-edit-mode="handleToggleEditMode"
       />
 
       <main class="body-container">
-        <MapComponent
-          v-show="currentView === 'map' || currentView === 'routes'"
-          ref="mapComponentRef"
-          :isConnectionModeActive="isConnectionModeActive"
-          :isEditSucursalesMode="isEditSucursalesMode"
-          :clientOrders="clientOrders"
-          @toggle-connection-mode="handleToggleConnectionMode"
-          @sucursal-added="handleSucursalAdded"
-          @exit-edit-mode="handleExitEditMode"
-        />
+        <div v-show="currentView === 'map' || currentView === 'routes'" class="map-and-routing">
+          <MapComponent
+            ref="mapComponentRef"
+            :isConnectionModeActive="isConnectionModeActive"
+            :isEditSucursalesMode="isEditSucursalesMode"
+            :clientOrders="clientOrders"
+            :optimizationRoutes="optimizationRoutes"
+            @toggle-connection-mode="handleToggleConnectionMode"
+            @sucursal-added="handleSucursalAdded"
+            @exit-edit-mode="handleExitEditMode"
+            @clear-routes="clearOptimizationRoutes"
+          />
+        </div>
+
         <MaterialsManagement
           v-show="currentView === 'materials'"
           @back-to-map="handleBackToMap"
           @continue="handleContinueMaterials"
         />
 
-        <!-- RouteManager como overlay flotante -->
+        <OptimizationView
+          v-show="currentView === 'optimization'"
+          :suppliers-count="suppliersCount"
+          :customers-count="customersCount"
+          @back-to-map="handleBackToMap"
+          @visualize-routes="handleVisualizeRoutes"
+        />
+
         <Teleport to="body" v-if="currentView === 'routes'">
           <div class="route-manager-overlay">
             <div class="route-manager-container">
@@ -42,6 +54,15 @@
         </Teleport>
       </main>
     </div>
+
+    <button 
+      v-show="currentView === 'map'" 
+      class="btn-optimize-float" 
+      @click="handleShowOptimization"
+    >
+      <i class="fas fa-chart-line"></i>
+      <span>Optimizar</span>
+    </button>
   </div>
 </template>
 
@@ -59,6 +80,7 @@ import {
   ordersAPI,
 } from "@/services/api";
 import RouteManagementView from "./RouteManagementView.vue";
+import OptimizationView from "./components/OptimizationView.vue";
 
 const mapComponentRef = ref(null);
 const currentView = ref("map");
@@ -66,15 +88,52 @@ const isConnectionModeActive = ref(false);
 const isEditSucursalesMode = ref(false);
 const clientOrders = ref([]);
 const setupStore = useSetupStore();
+const suppliersCount = ref(0);
+const customersCount = ref(0);
+const optimizationRoutes = ref([]);
+
+const updateCounts = async () => {
+  const companyId = setupStore.company.value?.id;
+  if (companyId) {
+    try {
+      const locations = await locationsAPI.getByCompany(companyId);
+      suppliersCount.value = locations.success ? locations.data.length : 0;
+      
+      const orders = await ordersAPI.getByCompany(companyId);
+      customersCount.value = orders.success ? orders.data.length : 0;
+    } catch (error) {
+      console.error('Error al cargar conteos:', error);
+    }
+  }
+};
+
+const handleShowOptimization = () => {
+  currentView.value = "optimization";
+};
+
+const handleVisualizeRoutes = (routes) => {
+  optimizationRoutes.value = routes;
+  currentView.value = "map";
+  
+  setTimeout(() => {
+    if (mapComponentRef.value) {
+      mapComponentRef.value.drawOptimizationRoutes(routes);
+    }
+  }, 100);
+};
+
+const clearOptimizationRoutes = () => {
+  optimizationRoutes.value = [];
+};
 
 onMounted(async () => {
-  console.log("📍 DashboardLayout mounted");
+  console.log("DashboardLayout mounted");
 
   const setupData = setupStore.getSetupData();
-  console.log("📦 Setup data:", setupData);
+  console.log("Setup data:", setupData);
 
   if (!setupData.company || !setupData.company.id) {
-    console.log("⚠️ No hay empresa en setupStore, obteniendo del backend...");
+    console.log("No hay empresa en setupStore, obteniendo del backend...");
 
     const currentUserData = JSON.parse(
       sessionStorage.getItem("currentUserData") || "{}",
@@ -82,7 +141,7 @@ onMounted(async () => {
     const userId = currentUserData.userId || setupData.userId;
 
     if (userId) {
-      console.log("🔍 Obteniendo empresa para userId:", userId);
+      console.log("Obteniendo empresa para userId:", userId);
       const companyResponse = await companiesAPI.getByUser(userId);
 
       if (
@@ -91,7 +150,7 @@ onMounted(async () => {
         companyResponse.data.length > 0
       ) {
         const company = companyResponse.data[0];
-        console.log("✅ Empresa cargada:", company);
+        console.log("Empresa cargada:", company);
         setupStore.setCompany({
           id: company.id,
           name: company.name,
@@ -102,66 +161,60 @@ onMounted(async () => {
       }
     }
   } else {
-    console.log("✅ Empresa ya existe:", setupData.company.name);
+    console.log("Empresa ya existe:", setupData.company.name);
   }
 
   const currentSetupData = setupStore.getSetupData();
   const companyId = currentSetupData.company?.id;
 
   if (companyId) {
+    await updateCounts();
+
     if (currentSetupData.pointTypes.length === 0) {
-      console.log("⚠️ Cargando tipos de sucursales...");
+      console.log("Cargando tipos de sucursales...");
       try {
         const typesResponse = await typeLocationsAPI.getByCompany(companyId);
         if (typesResponse.success && typesResponse.data.length > 0) {
-          console.log("✅ Tipos de sucursales cargados:", typesResponse.data);
+          console.log("Tipos de sucursales cargados:", typesResponse.data);
           setupStore.setPointTypes(typesResponse.data);
         }
       } catch (error) {
-        console.error("❌ Error al cargar tipos de sucursales:", error);
+        console.error("Error al cargar tipos de sucursales:", error);
       }
-    } else {
-      console.log(
-        "✅ Tipos de sucursales ya existen:",
-        currentSetupData.pointTypes.length,
-      );
     }
 
-    console.log("⚠️ Cargando tipos de materiales...");
+    console.log("Cargando tipos de materiales...");
     try {
       const materialsResponse = await typeMaterialsAPI.getByCompany(companyId);
       if (materialsResponse.success && materialsResponse.data.length > 0) {
-        console.log("✅ Tipos de materiales cargados:", materialsResponse.data);
+        console.log("Tipos de materiales cargados:", materialsResponse.data);
         setupStore.setProducts(materialsResponse.data);
       }
     } catch (error) {
-      console.error("❌ Error al cargar tipos de materiales:", error);
+      console.error("Error al cargar tipos de materiales:", error);
     }
 
-    console.log("⚠️ Cargando sucursales existentes...");
+    console.log("Cargando sucursales existentes...");
     try {
       const sucursalesResponse = await locationsAPI.getByCompany(companyId);
       if (sucursalesResponse.success && sucursalesResponse.data.length > 0) {
-        console.log("✅ Sucursales cargadas:", sucursalesResponse.data);
-      } else {
-        console.log("ℹ️ No hay sucursales registradas");
+        console.log("Sucursales cargadas:", sucursalesResponse.data);
       }
     } catch (error) {
-      console.error("❌ Error al cargar sucursales:", error);
+      console.error("Error al cargar sucursales:", error);
     }
 
-    console.log("⚠️ Cargando pedidos de clientes...");
+    console.log("Cargando pedidos de clientes...");
     try {
       const ordersResponse = await ordersAPI.getByCompany(companyId);
       if (ordersResponse.success && ordersResponse.data.length > 0) {
-        console.log("✅ Pedidos cargados:", ordersResponse.data);
+        console.log("Pedidos cargados:", ordersResponse.data);
         clientOrders.value = ordersResponse.data;
       } else {
-        console.log("ℹ️ No hay pedidos registrados");
         clientOrders.value = [];
       }
     } catch (error) {
-      console.error("❌ Error al cargar pedidos:", error);
+      console.error("Error al cargar pedidos:", error);
     }
   }
 });
@@ -184,6 +237,7 @@ const handleBackToMap = () => {
   currentView.value = "map";
   isConnectionModeActive.value = false;
   isEditSucursalesMode.value = false;
+  clearOptimizationRoutes();
 };
 
 const handleContinueMaterials = () => {
@@ -211,6 +265,7 @@ const handleExitEditMode = () => {
 
 const handleSucursalAdded = (sucursal) => {
   console.log("Sucursal agregada:", sucursal);
+  updateCounts();
 };
 </script>
 
@@ -233,7 +288,7 @@ const handleSucursalAdded = (sucursal) => {
 
 .body-container {
   flex: 1;
-  overflow: hidden;
+  overflow: auto;
   background: #eef2f9;
   display: flex;
   flex-direction: column;
@@ -241,27 +296,47 @@ const handleSucursalAdded = (sucursal) => {
   width: 100%;
 }
 
-.dashboard-content {
-  padding: 2rem;
-  max-width: 1400px;
-  margin: 0 auto;
-  width: 100%;
+.map-and-routing {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 15px;
+  height: 100%;
+  overflow-y: auto;
 }
 
-.dashboard-content h2 {
-  color: #ffffff;
-  font-size: 1.8rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
-  background: linear-gradient(135deg, #ffffff, #d4a373);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+.map-and-routing > div:first-child {
+  flex: 1;
+  min-height: 400px;
 }
 
-.dashboard-content p {
-  color: #a0abb9;
-  font-size: 1rem;
+.btn-optimize-float {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 14px 24px;
+  border-radius: 40px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 1000;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.btn-optimize-float:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-optimize-float i {
+  font-size: 16px;
 }
 
 ::-webkit-scrollbar {
@@ -316,7 +391,6 @@ const handleSucursalAdded = (sucursal) => {
   }
 }
 
-/* Asegurar que los componentes dentro de body-container ocupen todo el espacio */
 .body-container > * {
   width: 100%;
   height: 100%;
@@ -334,6 +408,13 @@ const handleSucursalAdded = (sucursal) => {
   .route-manager-container {
     max-width: calc(100vw - 1rem);
     max-height: calc(100vh - 80px);
+  }
+
+  .btn-optimize-float {
+    padding: 10px 18px;
+    font-size: 12px;
+    bottom: 16px;
+    right: 16px;
   }
 }
 </style>
